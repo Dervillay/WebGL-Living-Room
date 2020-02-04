@@ -80,12 +80,10 @@ function main() {
   viewProjMatrix.lookAt(0.0, 500.0, 200.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
   // Read OBJ file
-  readOBJFile("../models/mug.obj", gl, model, 60, true);
+  readOBJFile("../models/mug.obj", gl, model, 30, true);
 
-  var currentAngle = 0.0; // Current rotation angle 
   var tick = function() { // Start drawing
-    currentAngle = animate(currentAngle); // Update current rotation angle
-    draw(gl, gl.program, currentAngle, viewProjMatrix, model);
+    draw(gl, gl.program, viewProjMatrix, model);
     requestAnimationFrame(tick, canvas);
   }
   tick();
@@ -182,7 +180,7 @@ var g_mvpMatrix = new Matrix4();
 var g_normalMatrix = new Matrix4();
 
 // Draw function
-function draw(gl, program, angle, viewProjMatrix, model) {
+function draw(gl, program, viewProjMatrix, model) {
   if (g_objDoc != null && g_objDoc.isMTLComplete()){ // OBJ and all MTLs are available
     g_drawingInfo = onReadComplete(gl, model, g_objDoc);
     g_objDoc = null;
@@ -190,10 +188,6 @@ function draw(gl, program, angle, viewProjMatrix, model) {
   if (!g_drawingInfo) return;   // Determine if model has been loaded
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);  // Clear color and depth buffers
-
-  g_modelMatrix.setRotate(angle, 1.0, 0.0, 0.0); // Rotate appropriately
-  g_modelMatrix.rotate(angle, 0.0, 1.0, 0.0);
-  g_modelMatrix.rotate(angle, 0.0, 0.0, 1.0);
 
   // Calculate the normal transformation matrix and pass it to u_NormalMatrix
   g_normalMatrix.setInverseOf(g_modelMatrix);
@@ -228,18 +222,6 @@ function onReadComplete(gl, model, objDoc) {
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, drawingInfo.indices, gl.STATIC_DRAW);
 
   return drawingInfo;
-}
-
-var ANGLE_STEP = 30;   // The increments of rotation angle (degrees)
-
-var last = Date.now(); // Last time that this function was called
-function animate(angle) {
-  var now = Date.now();   // Calculate the elapsed time
-  var elapsed = now - last;
-  last = now;
-  // Update the current rotation angle (adjusted by the elapsed time)
-  var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
-  return newAngle % 360;
 }
 
 ///////////////////
