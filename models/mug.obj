@@ -1,6 +1,5 @@
 # Blender v2.81 (sub 16) OBJ File: 'mug.blend'
 # www.blender.org
-mtllib mug.mtl
 o Cylinder_Cylinder.001
 v -0.117022 -1.571240 -0.362356
 v -0.280772 1.228187 -1.060554
