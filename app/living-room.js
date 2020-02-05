@@ -146,29 +146,10 @@ function main() {
   // Read OBJ file
   //readOBJFile("../models/mug.obj", gl, model, 60, true);
 
-  var g_eyeX = 4, g_eyeY = 4;
-
   function tick() {
-
-    // Handle keydown
-    document.onkeydown = function(ev){ 
-      if(ev.keyCode == 39) { // The right arrow key was pressed
-        g_eyeX += 1;
-      } else if (ev.keyCode == 37) { // The left arrow key was pressed
-        g_eyeX -= 1; 
-      } else if (ev.keyCode == 38) { // The up arrow key was pressed
-        g_eyeY += 1; 
-      } else if (ev.keyCode == 40) { // The down arrow key was pressed
-        g_eyeY -= 1; 
-      } else { return; }
-    }
-
-    // Update lookAt with new coordinates
-    mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-    mvpMatrix.lookAt(g_eyeX, g_eyeY, 16, 0, 0, 0, 0, 1, 0);
-    mvpMatrix.multiply(modelMatrix);
-    gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
-
+    // Handle key presses
+    document.onkeydown = function(ev){ keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix); }
+  
     // Clear color and depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -182,6 +163,28 @@ function main() {
 /////////////////
 /// FUNCTIONS ///
 /////////////////
+
+var g_eyeX = 4, g_eyeY = 4;
+
+// Handle keydown
+function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
+  // Handle key input
+  if(ev.keyCode == 39) { // The right arrow key was pressed
+    g_eyeX += 1;
+  } else if (ev.keyCode == 37) { // The left arrow key was pressed
+    g_eyeX -= 1; 
+  } else if (ev.keyCode == 38) { // The up arrow key was pressed
+    g_eyeY += 1; 
+  } else if (ev.keyCode == 40) { // The down arrow key was pressed
+    g_eyeY -= 1; 
+  } else { return; }
+
+  // Update lookAt with new coordinates
+  mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
+  mvpMatrix.lookAt(g_eyeX, g_eyeY, 16, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.multiply(modelMatrix);
+  gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
+}
 
 // Calculate normal
 function calcNormal(p0, p1, p2) {
