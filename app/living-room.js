@@ -15,7 +15,8 @@ var VSHADER_SOURCE =
   '  gl_Position = u_MvpMatrix * a_Position;\n' +
   '  vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));\n' +
   '  float nDotL = max(dot(normal, lightDirection), 0.0);\n' +
-  '  v_Color = vec4(a_Color.rgb * nDotL, a_Color.a);\n' +
+  '  v_Color = a_Color;\n' + // use for cube
+  //'  v_Color = vec4(a_Color.rgb * nDotL, a_Color.a);\n' + // Use for OBJ models
   '}\n';
 
 // Fragment shader program
@@ -67,8 +68,21 @@ function main() {
     return;
   }
 
+  // Array of vertices and colours for cube
+  var verticesColors = new Float32Array([
+    // Vertex coordinates and color
+     100.0,  100.0,  100.0,     1.0,  1.0,  1.0,  // v0 White
+    -100.0,  100.0,  100.0,     1.0,  0.0,  1.0,  // v1 Magenta
+    -100.0, -100.0,  100.0,     1.0,  0.0,  0.0,  // v2 Red
+     100.0, -100.0,  100.0,     1.0,  1.0,  0.0,  // v3 Yellow
+     100.0, -100.0, -100.0,     0.0,  1.0,  0.0,  // v4 Green
+     100.0,  100.0, -100.0,     0.0,  1.0,  1.0,  // v5 Cyan
+    -100.0,  100.0, -100.0,     0.0,  0.0,  1.0,  // v6 Blue
+    -100.0, -100.0, -100.0,     0.0,  0.0,  0.0   // v7 Black
+  ]);
+
   // Prepare empty buffer objects for vertex coordinates, colors and normals
-  var model = initVertexBuffers(gl, program);
+  var model = initVertexBuffersCube(gl, verticesColors);
   if (!model) {
     console.log('Failed to set the vertex information');
     return;
@@ -76,14 +90,17 @@ function main() {
 
   // Calculate view projection matrix
   var viewProjMatrix = new Matrix4();
-  viewProjMatrix.setPerspective(30.0, canvas.width/canvas.height, 1.0, 5000.0);
-  viewProjMatrix.lookAt(0.0, 500.0, 200.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  viewProjMatrix.setPerspective(30, canvas.width/canvas.height, 1, 5000);
+  viewProjMatrix.lookAt(0, 500, 200, 0, 0, 0, 0, 1, 0);
 
   // Read OBJ file
-  readOBJFile("../models/mug.obj", gl, model, 30, true);
+  //readOBJFile("../models/cube.obj", gl, model, 60, true);
 
   var tick = function() { // Start drawing
-    draw(gl, gl.program, viewProjMatrix, model);
+    // draw(gl, gl.program, viewProjMatrix, model);
+    // requestAnimationFrame(tick, canvas);
+
+    drawCube(gl, program, viewProjMatrix, model);
     requestAnimationFrame(tick, canvas);
   }
   tick();
@@ -92,6 +109,14 @@ function main() {
 /////////////////
 /// FUNCTIONS ///
 /////////////////
+
+function drawCube(gl, program, viewProjMatrix, model) {
+  // Pass the model view projection matrix to u_MvpMatrix
+  gl.uniformMatrix4fv(program.u_MvpMatrix, false, viewProjMatrix.elements);
+  // Clear color and depth buffer
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
+}
 
 // Calculate normal
 function calcNormal(p0, p1, p2) {
@@ -117,7 +142,7 @@ function calcNormal(p0, p1, p2) {
 
 // Create and initialise a buffer object
 function initVertexBuffers(gl, program) {
-  var o = new Object();
+  var o = new Object(); // Utilise Object object to return multiple buffer objects
   o.vertexBuffer = createEmptyArrayBuffer(gl, program.a_Position, 3, gl.FLOAT);
   o.normalBuffer = createEmptyArrayBuffer(gl, program.a_Normal, 3, gl.FLOAT);
   o.colorBuffer = createEmptyArrayBuffer(gl, program.a_Color, 4, gl.FLOAT);
@@ -127,6 +152,55 @@ function initVertexBuffers(gl, program) {
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
   return o;
+}
+
+// Create and initialise a buffer object for cubes
+function initVertexBuffersCube(gl, verticesColors) {
+
+  // Indices of the vertices
+  var indices = new Uint8Array([
+    0, 1, 2,   0, 2, 3,    // front
+    0, 3, 4,   0, 4, 5,    // right
+    0, 5, 6,   0, 6, 1,    // up
+    1, 6, 7,   1, 7, 2,    // left
+    7, 4, 3,   7, 3, 2,    // down
+    4, 7, 6,   4, 6, 5     // back
+ ]);
+
+  // Create a buffer object
+  var vertexColorBuffer = gl.createBuffer();
+  var indexBuffer = gl.createBuffer();
+  if (!vertexColorBuffer || !indexBuffer) {
+    return -1;
+  }
+
+  // Write the vertex coordinates and color to the buffer object
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, verticesColors, gl.STATIC_DRAW);
+
+  var FSIZE = verticesColors.BYTES_PER_ELEMENT;
+  // Assign the buffer object to a_Position and enable the assignment
+  var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+  if(a_Position < 0) {
+    console.log('Failed to get the storage location of a_Position');
+    return -1;
+  }
+  gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, FSIZE * 6, 0);
+  gl.enableVertexAttribArray(a_Position);
+  // Assign the buffer object to a_Color and enable the assignment
+  var a_Color = gl.getAttribLocation(gl.program, 'a_Color');
+  if(a_Color < 0) {
+    console.log('Failed to get the storage location of a_Color');
+    return -1;
+  }
+  gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, FSIZE * 6, FSIZE * 3);
+  gl.enableVertexAttribArray(a_Color);
+
+  // Write the indices to the buffer object
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+  return indices.length;
 }
 
 // Create a buffer object, assign it to attribute variables, and enable the assignment
@@ -165,6 +239,7 @@ var g_drawingInfo = null; // The info for drawing 3D model
 function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) {
   var objDoc = new OBJDoc(fileName); // Create an OBJDoc object
   var result = objDoc.parse(fileString, scale, reverse); // Parse the file
+
   if (!result) {
     g_objDoc = null;
     g_drawingInfo = null;
@@ -181,7 +256,7 @@ var g_normalMatrix = new Matrix4();
 
 // Draw function
 function draw(gl, program, viewProjMatrix, model) {
-  if (g_objDoc != null && g_objDoc.isMTLComplete()){ // OBJ and all MTLs are available
+  if (g_objDoc != null){ // OBJ is available
     g_drawingInfo = onReadComplete(gl, model, g_objDoc);
     g_objDoc = null;
   }
