@@ -64,7 +64,7 @@ function main() {
   }
 
   // Array of vertices for cube
-  var vertices = new Float32Array([
+  var vertices1 = new Float32Array([
     2.0, 2.0, 2.0,  -2.0, 2.0, 2.0,  -2.0,-2.0, 2.0,   2.0,-2.0, 2.0, // v0-v1-v2-v3 front
     2.0, 2.0, 2.0,   2.0,-2.0, 2.0,   2.0,-2.0,-2.0,   2.0, 2.0,-2.0, // v0-v3-v4-v5 right
     2.0, 2.0, 2.0,   2.0, 2.0,-2.0,  -2.0, 2.0,-2.0,  -2.0, 2.0, 2.0, // v0-v5-v6-v1 up
@@ -73,8 +73,18 @@ function main() {
     2.0,-2.0,-2.0,  -2.0,-2.0,-2.0,  -2.0, 2.0,-2.0,   2.0, 2.0,-2.0  // v4-v7-v6-v5 back
   ]);
 
+  // Array of vertices for cube
+  var vertices2 = new Float32Array([
+    0.0, 0.0, 0.0,  -4.0, 0.0, 0.0,  -4.0,-4.0, 0.0,   0.0,-4.0, 0.0, // v0-v1-v2-v3 front
+    0.0, 0.0, 0.0,   0.0,-4.0, 0.0,   0.0,-4.0,-4.0,   0.0, 0.0,-4.0, // v0-v3-v4-v5 right
+    0.0, 0.0, 0.0,   0.0, 0.0,-4.0,  -4.0, 0.0,-4.0,  -4.0, 0.0, 0.0, // v0-v5-v6-v1 up
+   -4.0, 0.0, 0.0,  -4.0, 0.0,-4.0,  -4.0,-4.0,-4.0,  -4.0,-4.0, 0.0, // v1-v6-v7-v2 left
+   -4.0,-4.0,-4.0,   0.0,-4.0,-4.0,   0.0,-4.0, 0.0,  -4.0,-4.0, 0.0, // v7-v4-v3-v2 down
+    0.0,-4.0,-4.0,  -4.0,-4.0,-4.0,  -4.0, 0.0,-4.0,   0.0, 0.0,-4.0  // v4-v7-v6-v5 back
+  ]);
+
   // Array of colors for cube
-  var colors = new Float32Array([
+  var colors1 = new Float32Array([
     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v1-v2-v3 front
     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v3-v4-v5 right
     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v5-v6-v1 up
@@ -83,8 +93,17 @@ function main() {
     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0　    // v4-v7-v6-v5 back
   ]);
 
+  var colors2 = new Float32Array([
+    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v0-v1-v2-v3 front
+    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v0-v3-v4-v5 right
+    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v0-v5-v6-v1 up
+    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v1-v6-v7-v2 left
+    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v7-v4-v3-v2 down
+    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1　    // v4-v7-v6-v5 back
+  ]);
+
   // Prepare empty buffer objects for vertex coordinates, colors and normals
-  var model = initVertexBuffersCube(gl, vertices, colors);
+  var model = initVertexBuffersCube(gl, vertices1, colors1);
   if (!model) {
     console.log('Failed to set the vertex information');
     return;
@@ -134,7 +153,7 @@ function main() {
 
   // Pass the model view projection matrix to u_MvpMatrix
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(g_eyeX, 4, 16, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(4, 4, 16, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 
@@ -149,12 +168,10 @@ function main() {
   function tick() {
     // Handle key presses
     document.onkeydown = function(ev){ keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix); }
-  
-    // Clear color and depth buffer
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // draw(gl, gl.program, mvpMatrix, model); // Drawing OBJ files
-    gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
+    //drawOBJ(gl, gl.program, mvpMatrix, model); // Drawing OBJ files
+    draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix);
+
     requestAnimationFrame(tick, canvas);
   }
   tick();
@@ -164,24 +181,55 @@ function main() {
 /// FUNCTIONS ///
 /////////////////
 
-var g_eyeX = 4, g_eyeY = 4;
+// Preset rotation angle
+var rotationAngle = 0;
+// Coordinate transformation matrix
+var g_modelMatrix = new Matrix4(), g_mvpMatrix = new Matrix4(), g_normalMatrix = new Matrix4();
+
+// Draw models
+function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Clear color and depth buffer
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  g_modelMatrix.setTranslate(0.0, -3.0, 0.0);
+  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
+  drawBox(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  g_modelMatrix.setTranslate(0.0, 3.0, 0.0);
+  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
+  drawBox(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+}
+
+function drawBox(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  g_mvpMatrix.set(viewProjMatrix);
+  g_mvpMatrix.multiply(g_modelMatrix);
+  gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
+  // Calculate the normal transformation matrix and pass it to u_NormalMatrix
+  g_normalMatrix.setInverseOf(g_modelMatrix);
+  g_normalMatrix.transpose();
+  gl.uniformMatrix4fv(u_NormalMatrix, false, g_normalMatrix.elements);
+  // Draw
+  gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
+}
+
+var g_viewY = 4;
 
 // Handle keydown
 function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
   // Handle key input
   if(ev.keyCode == 39) { // The right arrow key was pressed
-    g_eyeX += 1;
+    rotationAngle -= 3;
   } else if (ev.keyCode == 37) { // The left arrow key was pressed
-    g_eyeX -= 1; 
+    rotationAngle += 3;
   } else if (ev.keyCode == 38) { // The up arrow key was pressed
-    g_eyeY += 1; 
+    g_viewY += 1; 
   } else if (ev.keyCode == 40) { // The down arrow key was pressed
-    g_eyeY -= 1; 
+    g_viewY -= 1; 
   } else { return; }
 
   // Update lookAt with new coordinates
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(g_eyeX, g_eyeY, 16, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(4, g_viewY, 16, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 }
@@ -340,7 +388,7 @@ var g_mvpMatrix = new Matrix4();
 var g_normalMatrix = new Matrix4();
 
 // Draw function
-function draw(gl, program, viewProjMatrix, model) {
+function drawOBJ(gl, program, viewProjMatrix, model) {
   if (g_objDoc != null){ // OBJ is available
     g_drawingInfo = onReadComplete(gl, model, g_objDoc);
     g_objDoc = null;
