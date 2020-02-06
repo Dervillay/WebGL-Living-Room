@@ -120,7 +120,7 @@ function main() {
   // Set the light direction (in the world coordinate)
   gl.uniform3f(program.u_LightPosition, 2.3, 4.0, 3.5);
   // Set the ambient light
-  gl.uniform3f(program.u_AmbientLight, 0.2, 0.2, 0.2);
+  gl.uniform3f(program.u_AmbientLight, 0.3, 0.3, 0.3);
 
   var modelMatrix = new Matrix4();  // Model matrix
   var mvpMatrix = new Matrix4();    // Model view projection matrix
@@ -172,32 +172,37 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   /* Table start */
+  var tableLength = 0.2;
   g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
   g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 2.0, 0.1, 3.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawBox(gl, model, 2.0, tableLength, 3.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Leg 1
-  g_modelMatrix.setTranslate(1.8, -1.1, 2.8);
-  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  pushMatrix(g_modelMatrix);
+  var legLength = 4;
+  g_modelMatrix.translate(0.9, -1-legLength, 0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 2
-  g_modelMatrix.setTranslate(-1.8, -1.1, 2.8);
-  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-0.9, -1-legLength, 0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 3
-  g_modelMatrix.setTranslate(-1.8, -1.1, -2.8);
-  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.9, -1-legLength, -0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 4
-  g_modelMatrix.setTranslate(1.8, -1.1, -2.8);
-  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix.translate(-0.9, -1-legLength, -0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   /* Table end */
 }
 
+// Draw cuboid of specified dimensions
 function drawBox(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
 
   // Scale box dimensions
@@ -217,15 +222,29 @@ function drawBox(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u
   gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
 }
 
+// Stack for storing matrices
+var g_matrixStack = [];
+
+// Push to matrix stack
+function pushMatrix(m) {
+  var m2 = new Matrix4(m);
+  g_matrixStack.push(m2);
+}
+
+// Pop from matrix stack
+function popMatrix() {
+  return g_matrixStack.pop();
+}
+
 var g_viewY = 4;
 
 // Handle keydown
 function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
   // Handle key input
   if(ev.keyCode == 39) { // The right arrow key was pressed
-    rotationAngle -= 3;
+    rotationAngle = (rotationAngle - 3) % 360;
   } else if (ev.keyCode == 37) { // The left arrow key was pressed
-    rotationAngle += 3;
+    rotationAngle = (rotationAngle + 3) % 360;
   } else if (ev.keyCode == 38) { // The up arrow key was pressed
     g_viewY += 1; 
   } else if (ev.keyCode == 40) { // The down arrow key was pressed
