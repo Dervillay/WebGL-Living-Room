@@ -63,26 +63,6 @@ function main() {
     return;
   }
 
-  // Array of vertices for cube
-  var vertices1 = new Float32Array([
-    2.0, 2.0, 2.0,  -2.0, 2.0, 2.0,  -2.0,-2.0, 2.0,   2.0,-2.0, 2.0, // v0-v1-v2-v3 front
-    2.0, 2.0, 2.0,   2.0,-2.0, 2.0,   2.0,-2.0,-2.0,   2.0, 2.0,-2.0, // v0-v3-v4-v5 right
-    2.0, 2.0, 2.0,   2.0, 2.0,-2.0,  -2.0, 2.0,-2.0,  -2.0, 2.0, 2.0, // v0-v5-v6-v1 up
-   -2.0, 2.0, 2.0,  -2.0, 2.0,-2.0,  -2.0,-2.0,-2.0,  -2.0,-2.0, 2.0, // v1-v6-v7-v2 left
-   -2.0,-2.0,-2.0,   2.0,-2.0,-2.0,   2.0,-2.0, 2.0,  -2.0,-2.0, 2.0, // v7-v4-v3-v2 down
-    2.0,-2.0,-2.0,  -2.0,-2.0,-2.0,  -2.0, 2.0,-2.0,   2.0, 2.0,-2.0  // v4-v7-v6-v5 back
-  ]);
-
-  // Array of vertices for cube
-  var vertices2 = new Float32Array([
-    0.0, 0.0, 0.0,  -4.0, 0.0, 0.0,  -4.0,-4.0, 0.0,   0.0,-4.0, 0.0, // v0-v1-v2-v3 front
-    0.0, 0.0, 0.0,   0.0,-4.0, 0.0,   0.0,-4.0,-4.0,   0.0, 0.0,-4.0, // v0-v3-v4-v5 right
-    0.0, 0.0, 0.0,   0.0, 0.0,-4.0,  -4.0, 0.0,-4.0,  -4.0, 0.0, 0.0, // v0-v5-v6-v1 up
-   -4.0, 0.0, 0.0,  -4.0, 0.0,-4.0,  -4.0,-4.0,-4.0,  -4.0,-4.0, 0.0, // v1-v6-v7-v2 left
-   -4.0,-4.0,-4.0,   0.0,-4.0,-4.0,   0.0,-4.0, 0.0,  -4.0,-4.0, 0.0, // v7-v4-v3-v2 down
-    0.0,-4.0,-4.0,  -4.0,-4.0,-4.0,  -4.0, 0.0,-4.0,   0.0, 0.0,-4.0  // v4-v7-v6-v5 back
-  ]);
-
   // Array of colors for cube
   var colors1 = new Float32Array([
     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v1-v2-v3 front
@@ -103,14 +83,14 @@ function main() {
   ]);
 
   // Prepare empty buffer objects for vertex coordinates, colors and normals
-  var model = initVertexBuffersCube(gl, vertices1, colors1);
+  var model = initVertexBuffersCube(gl, colors1);
   if (!model) {
     console.log('Failed to set the vertex information');
     return;
   }
 
   // Set the clear color and enable the depth test
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
 
   var program = gl.program;
@@ -191,23 +171,48 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  g_modelMatrix.setTranslate(0.0, -3.0, 0.0);
+  /* Table start */
+  g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
   g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawBox(gl, model, 2.0, 0.1, 3.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
-  g_modelMatrix.setTranslate(0.0, 3.0, 0.0);
+  // Leg 1
+  g_modelMatrix.setTranslate(1.8, -1.1, 2.8);
   g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Leg 2
+  g_modelMatrix.setTranslate(-1.8, -1.1, 2.8);
+  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
+  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Leg 3
+  g_modelMatrix.setTranslate(-1.8, -1.1, -2.8);
+  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
+  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Leg 4
+  g_modelMatrix.setTranslate(1.8, -1.1, -2.8);
+  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
+  drawBox(gl, model, 0.2, 1.0, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  /* Table end */
 }
 
-function drawBox(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+function drawBox(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+
+  // Scale box dimensions
+  g_modelMatrix.scale(width, height, depth);
+
+  // Calculate the model view project matrix and pass it to u_MvpMatrix
   g_mvpMatrix.set(viewProjMatrix);
   g_mvpMatrix.multiply(g_modelMatrix);
   gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
+
   // Calculate the normal transformation matrix and pass it to u_NormalMatrix
   g_normalMatrix.setInverseOf(g_modelMatrix);
   g_normalMatrix.transpose();
   gl.uniformMatrix4fv(u_NormalMatrix, false, g_normalMatrix.elements);
+
   // Draw
   gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
 }
@@ -271,7 +276,17 @@ function initVertexBuffers(gl, program) {
 }
 
 // Create and initialise a buffer object for cubes
-function initVertexBuffersCube(gl, vertices, colors) {
+function initVertexBuffersCube(gl, colors) {
+
+  // Array of vertices for unit cube
+  var vertices = new Float32Array([
+    1.0, 1.0, 1.0,  -1.0, 1.0, 1.0,  -1.0,-1.0, 1.0,   1.0,-1.0, 1.0, // v0-v1-v1-v3 front
+    1.0, 1.0, 1.0,   1.0,-1.0, 1.0,   1.0,-1.0,-1.0,   1.0, 1.0,-1.0, // v0-v3-v4-v5 right
+    1.0, 1.0, 1.0,   1.0, 1.0,-1.0,  -1.0, 1.0,-1.0,  -1.0, 1.0, 1.0, // v0-v5-v6-v1 up
+   -1.0, 1.0, 1.0,  -1.0, 1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0,-1.0, 1.0, // v1-v6-v7-v1 left
+   -1.0,-1.0,-1.0,   1.0,-1.0,-1.0,   1.0,-1.0, 1.0,  -1.0,-1.0, 1.0, // v7-v4-v3-v1 down
+    1.0,-1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0, 1.0,-1.0,   1.0, 1.0,-1.0  // v4-v7-v6-v5 back
+  ]);
 
   // Normals of cube
   var normals = new Float32Array([
