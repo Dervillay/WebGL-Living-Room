@@ -7,6 +7,7 @@ var VSHADER_SOURCE =
   'attribute vec4 a_Position;\n' +
   'attribute vec4 a_Color;\n' +
   'attribute vec4 a_Normal;\n' +
+  'attribute vec2 a_TexCoord;\n' +
   'uniform mat4 u_MvpMatrix;\n' +
   'uniform mat4 u_ModelMatrix;\n' +   // Model matrix
   'uniform mat4 u_NormalMatrix;\n' +  // Transformation matrix of the normal
@@ -14,6 +15,7 @@ var VSHADER_SOURCE =
   'uniform vec3 u_LightPosition;\n' + // Position of the light source (in the world coordinate system)
   'uniform vec3 u_AmbientLight;\n' +  // Ambient light color
   'varying vec4 v_Color;\n' +
+  'varying vec2 v_TexCoord;\n' +
   'void main() {\n' +
   '  gl_Position = u_MvpMatrix * a_Position;\n' +
      // Recalculate the normal based on the model matrix and make its length 1.
@@ -28,8 +30,10 @@ var VSHADER_SOURCE =
   '  vec3 diffuse = u_LightColor * a_Color.rgb * nDotL;\n' +
      // Calculate the color due to ambient reflection
   '  vec3 ambient = u_AmbientLight * a_Color.rgb;\n' +
-     //  Add the surface colors due to diffuse reflection and ambient reflection
+     // Add the surface colors due to diffuse reflection and ambient reflection
   '  v_Color = vec4(diffuse + ambient, a_Color.a);\n' + 
+     // Add texture coords
+  '  v_TexCoord = a_TexCoord;\n' +   
   '}\n';
 
 // Fragment shader program
@@ -38,8 +42,11 @@ var FSHADER_SOURCE =
   'precision mediump float;\n' +
   '#endif\n' +
   'varying vec4 v_Color;\n' +
+  'uniform sampler2D u_Sampler;\n' +
+  'varying vec2 v_TexCoord;\n' +
   'void main() {\n' +
-  '  gl_FragColor = v_Color;\n' +
+  '  gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n' +
+  //'  gl_FragColor = v_Color;\n' +
   '}\n';
 
 ////////////
@@ -99,14 +106,15 @@ function main() {
   program.a_Position = gl.getAttribLocation(program, 'a_Position');
   program.a_Normal = gl.getAttribLocation(program, 'a_Normal');
   program.a_Color = gl.getAttribLocation(program, 'a_Color');
+  program.a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
 
   // Get the storage locations of uniform variables
   program.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
   program.u_NormalMatrix = gl.getUniformLocation(program, 'u_NormalMatrix');
-  program.u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
-  program.u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
-  program.u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
-  program.u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
+  program.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
+  program.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
+  program.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
+  program.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
 
   if (program.a_Position < 0 ||  program.a_Normal < 0 || program.a_Color < 0 ||
       !program.u_MvpMatrix || !program.u_NormalMatrix || !program.u_ModelMatrix ||
@@ -142,8 +150,15 @@ function main() {
   normalMatrix.transpose();
   gl.uniformMatrix4fv(program.u_NormalMatrix, false, normalMatrix.elements);
 
+  // Set texture
+  if (!initTextures(gl)) {
+    console.log('Failed to intialize the texture.');
+    return;
+  }
+
   // Read OBJ file
   //readOBJFile("../models/mug.obj", gl, model, 60, true);
+  
 
   function tick() {
     // Handle key presses
@@ -151,7 +166,6 @@ function main() {
 
     //drawOBJ(gl, gl.program, mvpMatrix, model); // Drawing OBJ files
     draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix);
-
     requestAnimationFrame(tick, canvas);
   }
   tick();
@@ -307,6 +321,16 @@ function initVertexBuffersCube(gl, colors) {
     1.0,-1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0, 1.0,-1.0,   1.0, 1.0,-1.0  // v4-v7-v6-v5 back
   ]);
 
+  // Texture coordinates
+  var texCoords = new Float32Array([
+    1.0, 1.0,   0.0, 1.0,   0.0, 0.0,   1.0, 0.0,    // v0-v1-v2-v3 front
+    0.0, 1.0,   0.0, 0.0,   1.0, 0.0,   1.0, 1.0,    // v0-v3-v4-v5 right
+    1.0, 0.0,   1.0, 1.0,   0.0, 1.0,   0.0, 0.0,    // v0-v5-v6-v1 up
+    1.0, 1.0,   0.0, 1.0,   0.0, 0.0,   1.0, 0.0,    // v1-v6-v7-v2 left
+    0.0, 0.0,   1.0, 0.0,   1.0, 1.0,   0.0, 1.0,    // v7-v4-v3-v2 down
+    0.0, 0.0,   1.0, 0.0,   1.0, 1.0,   0.0, 1.0     // v4-v7-v6-v5 back
+  ]);
+
   // Normals of cube
   var normals = new Float32Array([
     0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
@@ -331,6 +355,7 @@ function initVertexBuffersCube(gl, colors) {
   if (!initArrayBuffer(gl, 'a_Position', vertices, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_Color', colors, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_Normal', normals, 3, gl.FLOAT)) return -1;
+  if (!initArrayBuffer(gl, 'a_TexCoord', texCoords, 2, gl.FLOAT)) return -1;
 
   // Unbind the buffer object
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -341,6 +366,7 @@ function initVertexBuffersCube(gl, colors) {
     console.log('Failed to create the buffer object');
     return false;
   }
+
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
@@ -373,6 +399,7 @@ function initArrayBuffer(gl, attribute, data, num, type) {
   // Write date into the buffer object
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
   // Assign the buffer object to the attribute variable
   var a_attribute = gl.getAttribLocation(gl.program, attribute);
   if (a_attribute < 0) {
@@ -385,6 +412,57 @@ function initArrayBuffer(gl, attribute, data, num, type) {
 
   return true;
 }
+
+// Initialise textures
+function initTextures(gl) {
+  // Create a texture object
+  var texture = gl.createTexture();
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return false;
+  }
+
+  // Get the storage location of u_Sampler
+  var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+  if (!u_Sampler) {
+    console.log('Failed to get the storage location of u_Sampler');
+    return false;
+  }
+
+  // Create the image object
+  var image = new Image();
+  if (!image) {
+    console.log('Failed to create the image object');
+    return false;
+  }
+
+  // Register the event handler to be called when image loading is completed
+  image.onload = function(){ loadTexture(gl, texture, u_Sampler, image); };
+  // Tell the browser to load an Image
+  image.src = '../textures/wood.jpg';
+
+  return true;
+}
+
+function loadTexture(gl, texture, u_Sampler, image) {
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);  // Flip the image Y coordinate
+  // Activate texture unit0
+  gl.activeTexture(gl.TEXTURE0);
+  // Bind the texture object to the target
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Set texture parameters
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  // Set the image to texture
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+  // Pass the texure unit 0 to u_Sampler
+  gl.uniform1i(u_Sampler, 0);
+}
+
+///
+// OBJ STUFF 
+///
 
 // Read an OBJ file
 function readOBJFile(fileName, gl, model, scale, reverse) {
