@@ -42,10 +42,10 @@ var FSHADER_SOURCE =
   'precision mediump float;\n' +
   '#endif\n' +
   'varying vec4 v_Color;\n' +
-  'uniform sampler2D u_Sampler;\n' +
+  'uniform sampler2D u_Texture;\n' +
   'varying vec2 v_TexCoord;\n' +
   'void main() {\n' +
-  '  gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n' +
+  '  gl_FragColor = texture2D(u_Texture, v_TexCoord);\n' +
   //'  gl_FragColor = v_Color;\n' +
   '}\n';
 
@@ -185,6 +185,9 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  // Set texture to wood
+  gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+
   /* Table start */
   var tableLength = 0.2;
   g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
@@ -211,9 +214,19 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 4
+  pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.9, -1-legLength, -0.9);
   drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
   /* Table end */
+
+  // Set texture to brass
+  gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+
+  /* Coaster start */
+  g_modelMatrix.translate(-0.6, 1.3, 0.8);
+  drawBox(gl, model, 0.15, 0.2, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  /* Coaster end */
 }
 
 // Draw cuboid of specified dimensions
@@ -415,49 +428,58 @@ function initArrayBuffer(gl, attribute, data, num, type) {
 
 // Initialise textures
 function initTextures(gl) {
-  // Create a texture object
-  var texture = gl.createTexture();
-  if (!texture) {
-    console.log('Failed to create the texture object');
+  // Get the storage location of u_Texture
+  var u_Texture = gl.getUniformLocation(gl.program, 'u_Texture');
+  if (!u_Texture) {
+    console.log('Failed to get the storage location of u_Texture');
     return false;
   }
 
-  // Get the storage location of u_Sampler
-  var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
-  if (!u_Sampler) {
-    console.log('Failed to get the storage location of u_Sampler');
-    return false;
-  }
+  // Initialise list of images
+  var images = [];
 
-  // Create the image object
-  var image = new Image();
-  if (!image) {
-    console.log('Failed to create the image object');
-    return false;
-  }
+  // Create image objects
+  var image1 = new Image();
+  var image2 = new Image();
+
+  // Tell the browser to load images
+  image1.src = '../textures/wood.jpg';
+  image2.src = '../textures/brass.jpg';
+
+  // Push images to array
+  images.push(image1);
+  images.push(image2);
 
   // Register the event handler to be called when image loading is completed
-  image.onload = function(){ loadTexture(gl, texture, u_Sampler, image); };
-  // Tell the browser to load an Image
-  image.src = '../textures/wood.jpg';
+  image2.onload = function(){ loadTextures(gl, u_Texture, images); };
 
   return true;
 }
 
-function loadTexture(gl, texture, u_Sampler, image) {
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);  // Flip the image Y coordinate
-  // Activate texture unit0
-  gl.activeTexture(gl.TEXTURE0);
-  // Bind the texture object to the target
-  gl.bindTexture(gl.TEXTURE_2D, texture);
+var textures = [];
 
-  // Set texture parameters
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  // Set the image to texture
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+function loadTextures(gl, u_Texture, images) {
+  for (var i = 0; i < images.length; i++) {
 
-  // Pass the texure unit 0 to u_Sampler
-  gl.uniform1i(u_Sampler, 0);
+    // Create and bind the texture object to the target
+    var texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // Flip the image Y coordinate
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+    // Pass texture unit to u_Texture
+    gl.uniform1i(u_Texture, 0);
+
+    // Set texture parameters
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+    // Set the image to texture
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, images[i]);
+
+    // Push texture to array of textures
+    textures.push(texture);
+  }
 }
 
 ///
