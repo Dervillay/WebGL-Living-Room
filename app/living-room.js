@@ -41,9 +41,9 @@ var FSHADER_SOURCE =
   '#ifdef GL_ES\n' +
   'precision mediump float;\n' +
   '#endif\n' +
-  'varying vec4 v_Color;\n' +
   'uniform sampler2D u_Texture;\n' +
   'varying vec2 v_TexCoord;\n' +
+  'varying vec4 v_Color;\n' +
   'void main() {\n' +
   '  gl_FragColor = texture2D(u_Texture, v_TexCoord);\n' +
   //'  gl_FragColor = v_Color;\n' +
@@ -79,22 +79,6 @@ function main() {
     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v7-v4-v3-v2 down
     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0　    // v4-v7-v6-v5 back
   ]);
-
-  var colors2 = new Float32Array([
-    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v0-v1-v2-v3 front
-    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v0-v3-v4-v5 right
-    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v0-v5-v6-v1 up
-    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v1-v6-v7-v2 left
-    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1,     // v7-v4-v3-v2 down
-    1, 0, 1,   1, 0, 1,   1, 0, 1,  1, 0, 1　    // v4-v7-v6-v5 back
-  ]);
-
-  // Prepare empty buffer objects for vertex coordinates, colors and normals
-  var model = initVertexBuffersCube(gl, colors1);
-  if (!model) {
-    console.log('Failed to set the vertex information');
-    return;
-  }
 
   // Set the clear color and enable the depth test
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -156,15 +140,24 @@ function main() {
     return;
   }
 
-  // Read OBJ file
-  //readOBJFile("../models/mug.obj", gl, model, 60, true);
-  
+  // Prepare empty buffer objects for vertex coordinates, colors and normals
+  //var OBJmodel = initVertexBuffersOBJ(gl, program);
+  var model = initVertexBuffers(gl, colors1, model, 0.79, 0.79, 0.72, 1);
 
+  // Read OBJ file
+  readOBJFile("../models/mug.obj", gl, 0.5, true);
+
+  // if (!model || !OBJmodel) {
+  //   console.log('Failed to set the vertex information');
+  //   return;
+  // }
+  
+  // Draw on each call of tick
   function tick() {
     // Handle key presses
     document.onkeydown = function(ev){ keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix); }
 
-    //drawOBJ(gl, gl.program, mvpMatrix, model); // Drawing OBJ files
+    //drawOBJ(gl, gl.program, mvpMatrix, OBJmodel, 0.79, 0.79, 0.72, 1, -1, 0, 0); // Draw OBJ files, specifying colours and alpha value
     draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix);
     requestAnimationFrame(tick, canvas);
   }
@@ -185,14 +178,25 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  /* Carpet start */
+
+  // Set texture to carpet
+  gl.bindTexture(gl.TEXTURE_2D, textures[2]);
+
+  // Draw carpet
+  g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
+  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
+  drawBox(gl, model, 10, 0.1, 10, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  /* Carpet end */
+
+  /* Table start */
+
   // Set texture to wood
   gl.bindTexture(gl.TEXTURE_2D, textures[0]);
 
-  /* Table start */
-  var tableLength = 0.2;
-  g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
-  g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 2.0, tableLength, 3.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  // Draw table
+  g_modelMatrix.translate(-0.3, 19.5, 0.0);
+  drawBox(gl, model, 0.2, 2, 0.3, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Leg 1
   pushMatrix(g_modelMatrix);
@@ -218,15 +222,20 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   g_modelMatrix.translate(-0.9, -1-legLength, -0.9);
   drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
+
   /* Table end */
+
+  /* Coaster start */
 
   // Set texture to brass
   gl.bindTexture(gl.TEXTURE_2D, textures[1]);
 
-  /* Coaster start */
+  // Draw coaster
   g_modelMatrix.translate(-0.6, 1.3, 0.8);
   drawBox(gl, model, 0.15, 0.2, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
   /* Coaster end */
+
 }
 
 // Draw cuboid of specified dimensions
@@ -263,7 +272,7 @@ function popMatrix() {
   return g_matrixStack.pop();
 }
 
-var g_viewY = 4;
+var g_viewY = 20;
 
 // Handle keydown
 function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
@@ -280,7 +289,7 @@ function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
 
   // Update lookAt with new coordinates
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(4, g_viewY, 16, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(15, g_viewY, 20, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 }
@@ -307,14 +316,15 @@ function calcNormal(p0, p1, p2) {
   return v.elements;
 }
 
-// Create and initialise a buffer object
-function initVertexBuffers(gl, program) {
+// Create and initialise a buffer object for OBJ files
+function initVertexBuffersOBJ(gl, program) {
   var o = new Object(); // Utilise Object object to return multiple buffer objects
   o.vertexBuffer = createEmptyArrayBuffer(gl, program.a_Position, 3, gl.FLOAT);
   o.normalBuffer = createEmptyArrayBuffer(gl, program.a_Normal, 3, gl.FLOAT);
   o.colorBuffer = createEmptyArrayBuffer(gl, program.a_Color, 4, gl.FLOAT);
   o.indexBuffer = gl.createBuffer();
-  if (!o.vertexBuffer || !o.normalBuffer || !o.colorBuffer || !o.indexBuffer) { return null; }
+
+  if (!o.vertexBuffer || !o.normalBuffer || !o.colorBuffer || !o.indexBuffer) return null;
 
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
@@ -322,7 +332,7 @@ function initVertexBuffers(gl, program) {
 }
 
 // Create and initialise a buffer object for cubes
-function initVertexBuffersCube(gl, colors) {
+function initVertexBuffers(gl, colors, model, r, g, b, a) {
 
   // Array of vertices for unit cube
   var vertices = new Float32Array([
@@ -441,13 +451,16 @@ function initTextures(gl) {
   // Create image objects
   var image1 = new Image();
   var image2 = new Image();
+  var image3 = new Image();
 
   // Tell the browser to load images
   image1.src = '../textures/wood.jpg';
-  image2.src = '../textures/brass.jpg';
+  image3.src = '../textures/brass.jpg';
+  image2.src = '../textures/carpet.jpg';
 
   // Push images to array
   images.push(image1);
+  images.push(image3);
   images.push(image2);
 
   // Register the event handler to be called when image loading is completed
@@ -482,28 +495,26 @@ function loadTextures(gl, u_Texture, images) {
   }
 }
 
-///
-// OBJ STUFF 
-///
-
 // Read an OBJ file
-function readOBJFile(fileName, gl, model, scale, reverse) {
+function readOBJFile(fileName, gl, scale, reverse) {
   var request = new XMLHttpRequest();
 
   request.onreadystatechange = function() {
     if (request.readyState === 4 && request.status !== 404) {
-      onReadOBJFile(request.responseText, fileName, gl, model, scale, reverse);
+      onReadOBJFile(request.responseText, fileName, gl, scale, reverse);
     }
   }
   request.open('GET', fileName, true); // Create a request to get file
   request.send();
+
+  return;
 }
 
 var g_objDoc = null; // The info of OBJ file
 var g_drawingInfo = null; // The info for drawing 3D model
 
 // OBJ file has been read
-function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) {
+function onReadOBJFile(fileString, fileName, gl, scale, reverse) {
   var objDoc = new OBJDoc(fileName); // Create an OBJDoc object
   var result = objDoc.parse(fileString, scale, reverse); // Parse the file
 
@@ -522,9 +533,9 @@ var g_mvpMatrix = new Matrix4();
 var g_normalMatrix = new Matrix4();
 
 // Draw function
-function drawOBJ(gl, program, viewProjMatrix, model) {
+function drawOBJ(gl, program, viewProjMatrix, model, r, g, b, a, x, y, z) {
   if (g_objDoc != null){ // OBJ is available
-    g_drawingInfo = onReadComplete(gl, model, g_objDoc);
+    g_drawingInfo = onReadComplete(gl, model, g_objDoc, r, g, b, a);
     g_objDoc = null;
   }
   if (!g_drawingInfo) return;   // Determine if model has been loaded
@@ -541,14 +552,15 @@ function drawOBJ(gl, program, viewProjMatrix, model) {
   g_mvpMatrix.multiply(g_modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, g_mvpMatrix.elements);
 
-  // Draw
+  // Translate and draw object
+  g_modelMatrix.setTranslate(x, y, z); // This will work once child of table 
   gl.drawElements(gl.TRIANGLES, g_drawingInfo.indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
 // OBJ file has been read completely
-function onReadComplete(gl, model, objDoc) {
+function onReadComplete(gl, model, objDoc, r, g, b, a) {
   // Acquire the vertex coordinates and colors from OBJ file
-  var drawingInfo = objDoc.getDrawingInfo();
+  var drawingInfo = objDoc.getDrawingInfo(r, g, b, a);
 
   // Write data into the buffer object
   gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
@@ -576,6 +588,7 @@ var OBJDoc = function(fileName) {
   this.objects = new Array(0); // Initialise the property for Object
   this.vertices = new Array(0); // Initialise the property for Vertex
   this.normals = new Array(0); // Initialise the property for Normal
+  this.textureVertices = new Array(0); // Initialise the property for Texture Vertices
 }
 
 // Parsing the OBJ file
@@ -630,6 +643,10 @@ OBJDoc.prototype.parse = function(fileString, scale, reverse) {
         var normal = this.parseNormal(sp);
         this.normals.push(normal);
         continue; // Go to the next line
+      case 'vt': // Read texture vertices
+        var textureVertex = this.parseTextureVertex(sp, scale);
+        this.textureVertices.push(textureVertex);
+        continue; // Go to the next line
       case 'usemtl': // Read Material name
         currentMaterialName = this.parseUsemtl(sp);
         continue; // Go to the next line
@@ -661,6 +678,12 @@ OBJDoc.prototype.parseVertex = function(sp, scale) {
   var y = sp.getFloat() * scale;
   var z = sp.getFloat() * scale;
   return (new Vertex(x, y, z));
+}
+
+OBJDoc.prototype.parseTextureVertex = function(sp, scale) {
+  var x = sp.getFloat() * scale;
+  var y = sp.getFloat() * scale;
+  return (new TextureVertex(x, y));
 }
 
 OBJDoc.prototype.parseNormal = function(sp) {
@@ -803,7 +826,7 @@ OBJDoc.prototype.findColor = function(name){
   return(new Color(0.8, 0.8, 0.8, 1));
 }
 
-OBJDoc.prototype.getDrawingInfo = function() {
+OBJDoc.prototype.getDrawingInfo = function(r, g, b, a) {
   // Create an array for vertex coordinates, normals, colors, and indices
   var numIndices = 0;
   for (var i = 0; i < this.objects.length; i++) {
@@ -833,10 +856,10 @@ OBJDoc.prototype.getDrawingInfo = function() {
         vertices[index_indices * 3 + 1] = vertex.y;
         vertices[index_indices * 3 + 2] = vertex.z;
         // Copy color
-        colors[index_indices * 4 + 0] = color.r;
-        colors[index_indices * 4 + 1] = color.g;
-        colors[index_indices * 4 + 2] = color.b;
-        colors[index_indices * 4 + 3] = color.a;
+        colors[index_indices * 4 + 0] = r;
+        colors[index_indices * 4 + 1] = g;
+        colors[index_indices * 4 + 2] = b;
+        colors[index_indices * 4 + 3] = a;
         // Copy normal
         var nIdx = face.nIndices[k];
         if (nIdx >= 0) {
@@ -894,6 +917,15 @@ var Vertex = function(x, y, z) {
   this.x = x;
   this.y = y;
   this.z = z;
+}
+
+///////////////////////////
+// Texture Vertex Object //
+///////////////////////////
+
+var TextureVertex = function(x, y) {
+  this.x = x;
+  this.y = y;
 }
 
 ///////////////////
