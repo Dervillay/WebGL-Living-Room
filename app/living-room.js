@@ -16,12 +16,15 @@ var VSHADER_SOURCE =
   'uniform vec3 u_AmbientLight;\n' +  // Ambient light color
   'varying vec4 v_Color;\n' +
   'varying vec2 v_TexCoord;\n' +
+  'uniform sampler2D u_Texture;\n' +
   'void main() {\n' +
   '  gl_Position = u_MvpMatrix * a_Position;\n' +
      // Recalculate the normal based on the model matrix and make its length 1.
   '  vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));\n' +
      // Calculate world coordinate of vertex
   '  vec4 vertexPosition = u_ModelMatrix * a_Position;\n' +
+     // Add texture coords
+  '  v_TexCoord = a_TexCoord;\n' +  
      // Calculate the light direction and make it 1.0 in length
   '  vec3 lightDirection = normalize(u_LightPosition - vec3(vertexPosition));\n' +
      // The dot product of the light direction and the normal
@@ -31,9 +34,7 @@ var VSHADER_SOURCE =
      // Calculate the color due to ambient reflection
   '  vec3 ambient = u_AmbientLight * a_Color.rgb;\n' +
      // Add the surface colors due to diffuse reflection and ambient reflection
-  '  v_Color = vec4(diffuse + ambient, a_Color.a);\n' + 
-     // Add texture coords
-  '  v_TexCoord = a_TexCoord;\n' +   
+  '  v_Color = vec4(diffuse + ambient, a_Color.a);\n' +  
   '}\n';
 
 // Fragment shader program
@@ -125,7 +126,7 @@ function main() {
 
   // Pass the model view projection matrix to u_MvpMatrix
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(4, 4, 16, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(15, 20, 20, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 
@@ -181,7 +182,7 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   /* Carpet start */
 
   // Set texture to carpet
-  gl.bindTexture(gl.TEXTURE_2D, textures[2]);
+  gl.bindTexture(gl.TEXTURE_2D, textures[0]);
 
   // Draw carpet
   g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
@@ -192,11 +193,12 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   /* Table start */
 
   // Set texture to wood
-  gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+  gl.bindTexture(gl.TEXTURE_2D, textures[1]);
 
   // Draw table
+  pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.3, 19.5, 0.0);
-  drawBox(gl, model, 0.2, 2, 0.3, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawBox(gl, model, 0.15, 2, 0.25, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Leg 1
   pushMatrix(g_modelMatrix);
@@ -228,13 +230,20 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   /* Coaster start */
 
   // Set texture to brass
-  gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+  gl.bindTexture(gl.TEXTURE_2D, textures[2]);
 
   // Draw coaster
+  pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.6, 1.3, 0.8);
   drawBox(gl, model, 0.15, 0.2, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
 
   /* Coaster end */
+
+  // Draw long sofa
+  drawLongSofa(gl, model, -0.9, 19, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShortSofa(gl, model, -0.3, 19, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
 }
 
@@ -256,6 +265,63 @@ function drawBox(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u
 
   // Draw
   gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
+}
+
+function drawLongSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to suede
+  gl.bindTexture(gl.TEXTURE_2D, textures[3]);
+
+  // Back of sofa
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.05, 18, 0.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Front of sofa
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(2.0, -0.6, 0.0);
+  drawBox(gl, model, 2.5, 0.4, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Arm 1
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(1.8, -0.4, -1.1);
+  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Arm 2
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(1.8, -0.4, 1.1);
+  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawShortSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to suede
+  gl.bindTexture(gl.TEXTURE_2D, textures[3]);
+  
+  // Back of sofa
+  g_modelMatrix.translate(-0.3, 19, 0.8);
+  g_modelMatrix.rotate(90, 0.0, 1.0, 0.0);
+  drawBox(gl, model, 0.05, 18, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Front of sofa
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(2.0, -0.6, 0.0);
+  drawBox(gl, model, 2.5, 0.4, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Arm 1
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(1.8, -0.4, -1.1);
+  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Arm 2
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(1.8, -0.4, 1.1);
+  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
 // Stack for storing matrices
@@ -289,7 +355,7 @@ function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
 
   // Update lookAt with new coordinates
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(15, g_viewY, 20, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(20, g_viewY, 20, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 }
@@ -452,19 +518,22 @@ function initTextures(gl) {
   var image1 = new Image();
   var image2 = new Image();
   var image3 = new Image();
+  var image4 = new Image();
 
   // Tell the browser to load images
-  image1.src = '../textures/wood.jpg';
+  image1.src = '../textures/carpet.jpg';
+  image2.src = '../textures/wood.jpg';
   image3.src = '../textures/brass.jpg';
-  image2.src = '../textures/carpet.jpg';
+  image4.src = '../textures/suede.jpg';
 
   // Push images to array
   images.push(image1);
-  images.push(image3);
   images.push(image2);
+  images.push(image3);
+  images.push(image4);
 
   // Register the event handler to be called when image loading is completed
-  image2.onload = function(){ loadTextures(gl, u_Texture, images); };
+  image4.onload = function(){ loadTextures(gl, u_Texture, images); };
 
   return true;
 }
