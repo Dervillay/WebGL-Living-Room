@@ -43,10 +43,12 @@ var FSHADER_SOURCE =
   'precision mediump float;\n' +
   '#endif\n' +
   'uniform sampler2D u_Texture;\n' +
+  'uniform float u_Intensity;\n' +
   'varying vec2 v_TexCoord;\n' +
   'varying vec4 v_Color;\n' +
   'void main() {\n' +
-  '  gl_FragColor = texture2D(u_Texture, v_TexCoord);\n' +
+  '  vec4 color = texture2D(u_Texture, v_TexCoord);\n' +
+  '  gl_FragColor = vec4(color.rgb * u_Intensity, color.a);\n' +
   //'  gl_FragColor = v_Color;\n' +
   '}\n';
 
@@ -100,10 +102,12 @@ function main() {
   program.u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
   program.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
   program.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
+  program.u_Intensity = gl.getUniformLocation(program, 'u_Intensity');
 
   if (program.a_Position < 0 ||  program.a_Normal < 0 || program.a_Color < 0 ||
       !program.u_MvpMatrix || !program.u_NormalMatrix || !program.u_ModelMatrix ||
-      !program.u_LightColor || !program.u_LightPosition || !program.u_AmbientLight) {
+      !program.u_LightColor || !program.u_LightPosition || !program.u_AmbientLight ||
+      !program.u_Intensity) {
     console.log('Failed to get variable storage location'); 
     return;
   }
@@ -114,6 +118,8 @@ function main() {
   gl.uniform3f(program.u_LightPosition, 2.3, 4.0, 3.5);
   // Set the ambient light
   gl.uniform3f(program.u_AmbientLight, 0.3, 0.3, 0.3);
+  // Set instensity
+  gl.uniform1f(program.u_Intensity, lightIntensity);
 
   var modelMatrix = new Matrix4();  // Model matrix
   var mvpMatrix = new Matrix4();    // Model view projection matrix
@@ -184,7 +190,7 @@ function main() {
       beanBagAngle += 1;
     }
 
-    // Animate lamp shades
+    // Animate lamp shades and alter light intensity
     if (animateLamps) {
       if (shadeHeight > 53) {
         shadeHeight -= 1;
@@ -193,6 +199,19 @@ function main() {
       }
     } else if (shadeHeight < 58) {
       shadeHeight += 1;
+    }
+
+    // Turn lights on/off
+    if (lightOn) {
+      if (lightIntensity < 1) {
+        lightIntensity += 0.05;
+      }
+      gl.uniform1f(program.u_Intensity, lightIntensity);
+    } else {
+      if (lightIntensity > 0.3) {
+        lightIntensity -= 0.05;
+      }
+      gl.uniform1f(program.u_Intensity, lightIntensity);
     }
 
   }
@@ -639,6 +658,8 @@ var beanBagAngle = 35; // Rotation (in degrees) of beanbag
 var newBeanBagAngle = 35; // Stores new angle for beanbag animation
 var animateLamps = false; // Defines lamp animation
 var shadeHeight = 58; // Height of lamp shades
+var lightIntensity = 1; // Intensity of light
+var lightOn = true; // Defines whether light is on
 
 // Handle keydown
 function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
@@ -669,6 +690,7 @@ function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
     newBeanBagAngle = beanBagAngle + 90;
   } else if (ev.keyCode == 76) { // L was pressed
     animateLamps = true;
+    lightOn = !lightOn;
   } else { return; }
 
   // Update lookAt with new coordinates
