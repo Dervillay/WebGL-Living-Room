@@ -161,7 +161,31 @@ function main() {
     //drawOBJ(gl, gl.program, mvpMatrix, OBJmodel, 0.79, 0.79, 0.72, 1, -1, 0, 0); // Draw OBJ files, specifying colours and alpha value
     draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix);
     requestAnimationFrame(tick, canvas);
+
+    // Animate speakers if TV is on
+    if (tvOn) {
+      if (growing == true && scale < 1.05) {
+        scale += 0.005;
+      } else if (scale >= 1.05) {
+        growing = false;
+        scale -= 0.005;
+      } else if (growing == false && scale > 1) {
+        scale -= 0.005;
+      } else if (scale <= 1) {
+        growing = true;
+        scale += 0.005;
+      }
+    } else {
+      scale = 1;
+    }
+
+    // Rotate bean bag
+    if (beanBagAngle != newBeanBagAngle) {
+      beanBagAngle += 1;
+    }
+
   }
+
   tick();
 }
 
@@ -198,6 +222,9 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
 
   // Draw coaster 2
   drawCoaster(gl, model, -0.6, 1.3, -0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix)
+  
+  // Draw remote
+  drawRemote(gl, model, -0.6, 1.3, 0.6, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Assign long sofa as child of carpet
@@ -265,7 +292,6 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   // Draw speaker 2
   drawSpeaker(gl, model, 0.8, 19.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
-
 }
 
 
@@ -352,6 +378,40 @@ function drawCoaster(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(x, y, z);
   drawBox(gl, model, 0.15, 0.2, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawRemote(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to gloss
+  gl.bindTexture(gl.TEXTURE_2D, textures[8]);
+
+  // Coaster
+  g_modelMatrix.translate(x, y, z);
+  g_modelMatrix.rotate(30, 0.0, 1.0, 0.0);
+  drawBox(gl, model, 0.45, 0.3, 0.08, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Set texture to plastic
+  gl.bindTexture(gl.TEXTURE_2D, textures[9]);
+
+  // Button 1
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-0.5, 1.0, 0.0);
+  drawBox(gl, model, 0.3, 0.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Button 2
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.2, 1.0, 0.0);
+  drawBox(gl, model, 0.2, 0.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Set texture to power button
+  gl.bindTexture(gl.TEXTURE_2D, textures[11]);
+
+  // Power button
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.8, 1.0, 0.4);
+  drawBox(gl, model, 0.08, 0.5, 0.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -447,7 +507,7 @@ function drawBeanbag(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
   
   // Back of sofa
   g_modelMatrix.translate(x, y, z);
-  g_modelMatrix.rotate(-35, 0.0, 1.0, 0.0);
+  g_modelMatrix.rotate(beanBagAngle, 0.0, 1.0, 0.0);
   drawBox(gl, model, 0.15, 10, 0.15, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 }
 
@@ -511,8 +571,12 @@ function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix)
   drawBox(gl, model, 0.2, 20.0, 1.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
-  // Set texture to gloss
-  gl.bindTexture(gl.TEXTURE_2D, textures[8]);
+  // Set texture to gloss if off, or soundwave if on
+  if (tvOn) {
+    gl.bindTexture(gl.TEXTURE_2D, textures[12]);
+  } else {
+    gl.bindTexture(gl.TEXTURE_2D, textures[8]);
+  }
 
   // Screen
   pushMatrix(g_modelMatrix);
@@ -527,7 +591,8 @@ function drawSpeaker(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
 
   // Speaker body
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.1, 15.0, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  drawBox(gl, model, 0.1*scale, 15.0*scale, 0.1*scale, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Set texture to mesh
   gl.bindTexture(gl.TEXTURE_2D, textures[10]);
@@ -554,6 +619,13 @@ function popMatrix() {
 }
 
 var g_viewY = 20;
+var g_perspX = 30;
+
+var tvOn = false; // Whether TV is on or off
+var scale = 0; // Scales objects for animations
+var growing = true; // Indicates direction for animations
+var beanBagAngle = 35; // Rotation (in degrees) of beanbag
+var newBeanBagAngle = 35; // Stores new angle for beanbag animation
 
 // Handle keydown
 function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
@@ -563,13 +635,29 @@ function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
   } else if (ev.keyCode == 37) { // The left arrow key was pressed
     rotationAngle = (rotationAngle + 3) % 360;
   } else if (ev.keyCode == 38) { // The up arrow key was pressed
-    g_viewY += 1; 
+    if (g_viewY < 50) {
+      g_viewY += 1;
+    }
   } else if (ev.keyCode == 40) { // The down arrow key was pressed
-    g_viewY -= 1; 
+    if (g_viewY > 0) {
+      g_viewY -= 1; 
+    }
+  } else if (ev.keyCode == 90) { // Z was pressed
+    if (g_perspX > 10) {
+      g_perspX -= 1; 
+    }
+  } else if (ev.keyCode == 88) { // X was pressed
+    if (g_perspX < 50) {
+      g_perspX += 1;
+    }
+  } else if (ev.keyCode == 84) { // T was pressed
+    tvOn = !tvOn;
+  } else if (ev.keyCode == 66) { // B was pressed
+    newBeanBagAngle = beanBagAngle + 90;
   } else { return; }
 
   // Update lookAt with new coordinates
-  mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
+  mvpMatrix.setPerspective(g_perspX, canvas.width/canvas.height, 1, 100);
   mvpMatrix.lookAt(20, g_viewY, 20, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
@@ -741,6 +829,8 @@ function initTextures(gl) {
   var image9 = new Image();
   var image10 = new Image();
   var image11 = new Image();
+  var image12 = new Image();
+  var image13 = new Image();
 
   // Tell the browser to load images
   image1.src = '../textures/carpet.jpg';
@@ -754,6 +844,8 @@ function initTextures(gl) {
   image9.src = '../textures/gloss.jpg';
   image10.src = '../textures/plastic.jpg';
   image11.src = '../textures/mesh.jpg';
+  image12.src = '../textures/powerbutton.jpg';
+  image13.src = '../textures/soundwave.jpg';
   
   // Push images to array
   images.push(image1);
@@ -767,9 +859,11 @@ function initTextures(gl) {
   images.push(image9);
   images.push(image10);
   images.push(image11);
+  images.push(image12);
+  images.push(image13);
 
   // Register the event handler to be called when image loading is completed
-  image8.onload = function(){ loadTextures(gl, u_Texture, images); };
+  image12.onload = function(){ loadTextures(gl, u_Texture, images); };
 
   return true;
 }
