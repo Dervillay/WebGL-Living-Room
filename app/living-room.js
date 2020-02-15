@@ -126,7 +126,7 @@ function main() {
 
   // Pass the model view projection matrix to u_MvpMatrix
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(15, 20, 20, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(20, 20, 20, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 
@@ -179,8 +179,6 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  /* Carpet start */
-
   // Set texture to carpet
   gl.bindTexture(gl.TEXTURE_2D, textures[0]);
 
@@ -188,64 +186,88 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
   g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
   drawBox(gl, model, 10, 0.1, 10, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
-  /* Carpet end */
 
-  /* Table start */
-
-  // Set texture to wood
-  gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+  // Assign following models as all part of table
+  pushMatrix(g_modelMatrix);
 
   // Draw table
-  pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(-0.3, 19.5, 0.0);
-  drawBox(gl, model, 0.15, 2, 0.25, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawTable(gl, model, -0.3, 19.5, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
-  // Leg 1
-  pushMatrix(g_modelMatrix);
-  var legLength = 4;
-  g_modelMatrix.translate(0.9, -1-legLength, 0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  // Draw coaster 1
+  drawCoaster(gl, model, 0.6, 1.3, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Draw coaster 2
+  drawCoaster(gl, model, -0.6, 1.3, -0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix)
   g_modelMatrix = popMatrix(g_modelMatrix);
 
-  // Leg 2
+  // Assign long sofa as child of carpet
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(-0.9, -1-legLength, 0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
-  g_modelMatrix = popMatrix(g_modelMatrix);
-
-  // Leg 3
-  pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(0.9, -1-legLength, -0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
-  g_modelMatrix = popMatrix(g_modelMatrix);
-
-  // Leg 4
-  pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(-0.9, -1-legLength, -0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
-  g_modelMatrix = popMatrix(g_modelMatrix);
-
-  /* Table end */
-
-  /* Coaster start */
-
-  // Set texture to brass
-  gl.bindTexture(gl.TEXTURE_2D, textures[2]);
-
-  // Draw coaster
-  pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(-0.6, 1.3, 0.8);
-  drawBox(gl, model, 0.15, 0.2, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
-  g_modelMatrix = popMatrix(g_modelMatrix);
-  g_modelMatrix = popMatrix(g_modelMatrix);
-
-  /* Coaster end */
 
   // Draw long sofa
   drawLongSofa(gl, model, -0.9, 19, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
-  drawShortSofa(gl, model, -0.3, 19, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign short sofa as child of carpet
+  pushMatrix(g_modelMatrix);
+
+  // Draw short sofa
+  drawShortSofa(gl, model, -0.3, 19.0, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign lamp 1 as child of carpet
+  pushMatrix(g_modelMatrix);
+
+  // Draw lamp 1
+  drawLamp(gl, model, 0.2, 1.0, 0.75, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign lamp 1 as child of carpet
+  pushMatrix(g_modelMatrix);
+  
+  // Draw lamp 2
+  drawLamp(gl, model, -0.8, 1.0, -0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign rug as child of carpet
+  pushMatrix(g_modelMatrix);
+
+  // Draw rug
+  drawRug(gl, model, 0.2, 1.0, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign bean bag as child of carpet
+  pushMatrix(g_modelMatrix);
+
+  // Draw bean bag
+  drawBeanbag(gl, model, -0.2, 11.0, -0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign cabinet as child of carpet
+  pushMatrix(g_modelMatrix);
+
+  // Draw cabinet
+  drawCabinet(gl, model, 0.8, 19.5, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Draw TV as child of cabinet
+  drawTV(gl, model, 0.0, 1.0, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign speaker 1 as child of carpet
+  pushMatrix(g_modelMatrix);
+
+  // Draw speaker 1
+  drawSpeaker(gl, model, 0.8, 19.5, -0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Assign speaker 2 as child of carpet
+  pushMatrix(g_modelMatrix);
+
+  // Draw speaker 2
+  drawSpeaker(gl, model, 0.8, 19.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
 
 }
+
 
 // Draw cuboid of specified dimensions
 function drawBox(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
@@ -272,7 +294,6 @@ function drawLongSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalM
   gl.bindTexture(gl.TEXTURE_2D, textures[3]);
 
   // Back of sofa
-  pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(x, y, z);
   drawBox(gl, model, 0.05, 18, 0.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
@@ -293,7 +314,6 @@ function drawLongSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalM
   g_modelMatrix.translate(1.8, -0.4, 1.1);
   drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
-  g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
 function drawShortSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
@@ -301,7 +321,7 @@ function drawShortSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_Normal
   gl.bindTexture(gl.TEXTURE_2D, textures[3]);
   
   // Back of sofa
-  g_modelMatrix.translate(-0.3, 19, 0.8);
+  g_modelMatrix.translate(x, y, z);
   g_modelMatrix.rotate(90, 0.0, 1.0, 0.0);
   drawBox(gl, model, 0.05, 18, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
@@ -321,6 +341,201 @@ function drawShortSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_Normal
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(1.8, -0.4, 1.1);
   drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawCoaster(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to brass
+  gl.bindTexture(gl.TEXTURE_2D, textures[2]);
+
+  // Coaster
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.15, 0.2, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawTable(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+
+  // Set texture to wood
+  gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+
+  // Tabletop
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.15, 2, 0.25, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Leg 1
+  pushMatrix(g_modelMatrix);
+  var legLength = 4;
+  g_modelMatrix.translate(0.9, -1-legLength, 0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Leg 2
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-0.9, -1-legLength, 0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Leg 3
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.9, -1-legLength, -0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Leg 4
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-0.9, -1-legLength, -0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawLamp(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to iron
+  gl.bindTexture(gl.TEXTURE_2D, textures[4]);
+
+  // Base
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.1, 1, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Pole
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0, 30, 0);
+  drawBox(gl, model, 0.1, 30, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Set texture to canvas
+  gl.bindTexture(gl.TEXTURE_2D, textures[5]);
+
+  // Shade 1
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0, 58, -1.1);
+  drawBox(gl, model, 1.2, 7, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Shade 2
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-1.1, 58, 0);
+  drawBox(gl, model, 0.1, 7, 1.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Shade 3
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0, 58, 1.1);
+  drawBox(gl, model, 1.2, 7, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Shade 4
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(1.1, 58, 0);
+  drawBox(gl, model, 0.1, 7, 1.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawRug(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to rug 
+  gl.bindTexture(gl.TEXTURE_2D, textures[6]);
+
+  // Rug
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.25, 1, 0.35, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+}
+
+function drawBeanbag(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to wool
+  gl.bindTexture(gl.TEXTURE_2D, textures[7]);
+  
+  // Back of sofa
+  g_modelMatrix.translate(x, y, z);
+  g_modelMatrix.rotate(-35, 0.0, 1.0, 0.0);
+  drawBox(gl, model, 0.15, 10, 0.15, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+}
+
+function drawCabinet(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to gloss
+  gl.bindTexture(gl.TEXTURE_2D, textures[8]);
+
+  // Top
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.15, 2, 0.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Shelf
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.0, -6.0, 0.0);
+  drawBox(gl, model, 1.0, 1.0, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Leg 1
+  pushMatrix(g_modelMatrix);
+  var legLength = 4;
+  g_modelMatrix.translate(0.9, -1-legLength, 0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Leg 2
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-0.9, -1-legLength, 0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Leg 3
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.9, -1-legLength, -0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Leg 4
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-0.9, -1-legLength, -0.9);
+  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to iron
+  gl.bindTexture(gl.TEXTURE_2D, textures[4]);
+
+  // Base
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.7, 0.5, 0.6, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Stem
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.5, 15.0, 0.0);
+  drawBox(gl, model, 0.15, 15.0, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Back
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.15, 25.0, 0.0);
+  drawBox(gl, model, 0.2, 20.0, 1.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Set texture to gloss
+  gl.bindTexture(gl.TEXTURE_2D, textures[8]);
+
+  // Screen
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(0.1, 25.0, 0.0);
+  drawBox(gl, model, 0.2, 18.0, 1.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix = popMatrix(g_modelMatrix);
+}
+
+function drawSpeaker(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+  // Set texture to plastic
+  gl.bindTexture(gl.TEXTURE_2D, textures[9]);
+
+  // Speaker body
+  g_modelMatrix.translate(x, y, z);
+  drawBox(gl, model, 0.1, 15.0, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Set texture to mesh
+  gl.bindTexture(gl.TEXTURE_2D, textures[10]);
+
+  // Speaker mesh
+  pushMatrix(g_modelMatrix);
+  g_modelMatrix.translate(-1.0, 0.0, 0.0);
+  drawBox(gl, model, 0.1, 0.9, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -519,21 +734,42 @@ function initTextures(gl) {
   var image2 = new Image();
   var image3 = new Image();
   var image4 = new Image();
+  var image5 = new Image();
+  var image6 = new Image();
+  var image7 = new Image();
+  var image8 = new Image();
+  var image9 = new Image();
+  var image10 = new Image();
+  var image11 = new Image();
 
   // Tell the browser to load images
   image1.src = '../textures/carpet.jpg';
   image2.src = '../textures/wood.jpg';
   image3.src = '../textures/brass.jpg';
   image4.src = '../textures/suede.jpg';
-
+  image5.src = '../textures/iron.jpg';
+  image6.src = '../textures/canvas.jpg';
+  image7.src = '../textures/rug.jpg';
+  image8.src = '../textures/wool.jpg';
+  image9.src = '../textures/gloss.jpg';
+  image10.src = '../textures/plastic.jpg';
+  image11.src = '../textures/mesh.jpg';
+  
   // Push images to array
   images.push(image1);
   images.push(image2);
   images.push(image3);
   images.push(image4);
+  images.push(image5);
+  images.push(image6);
+  images.push(image7);
+  images.push(image8);
+  images.push(image9);
+  images.push(image10);
+  images.push(image11);
 
   // Register the event handler to be called when image loading is completed
-  image4.onload = function(){ loadTextures(gl, u_Texture, images); };
+  image8.onload = function(){ loadTextures(gl, u_Texture, images); };
 
   return true;
 }
