@@ -126,7 +126,7 @@ function main() {
 
   // Pass the model view projection matrix to u_MvpMatrix
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(20, 20, 20, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(30, 30, 30, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 
@@ -182,6 +182,17 @@ function main() {
     // Rotate bean bag
     if (beanBagAngle != newBeanBagAngle) {
       beanBagAngle += 1;
+    }
+
+    // Animate lamp shades
+    if (animateLamps) {
+      if (shadeHeight > 53) {
+        shadeHeight -= 1;
+      } else if (shadeHeight == 53) {
+        animateLamps = false;
+      }
+    } else if (shadeHeight < 58) {
+      shadeHeight += 1;
     }
 
   }
@@ -469,25 +480,25 @@ function drawLamp(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatri
 
   // Shade 1
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(0, 58, -1.1);
+  g_modelMatrix.translate(0, shadeHeight, -1.1);
   drawBox(gl, model, 1.2, 7, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Shade 2
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(-1.1, 58, 0);
+  g_modelMatrix.translate(-1.1, shadeHeight, 0);
   drawBox(gl, model, 0.1, 7, 1.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Shade 3
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(0, 58, 1.1);
+  g_modelMatrix.translate(0, shadeHeight, 1.1);
   drawBox(gl, model, 1.2, 7, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Shade 4
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(1.1, 58, 0);
+  g_modelMatrix.translate(1.1, shadeHeight, 0);
   drawBox(gl, model, 0.1, 7, 1.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
@@ -618,7 +629,7 @@ function popMatrix() {
   return g_matrixStack.pop();
 }
 
-var g_viewY = 20;
+var g_viewY = 30;
 var g_perspX = 30;
 
 var tvOn = false; // Whether TV is on or off
@@ -626,6 +637,8 @@ var scale = 0; // Scales objects for animations
 var growing = true; // Indicates direction for animations
 var beanBagAngle = 35; // Rotation (in degrees) of beanbag
 var newBeanBagAngle = 35; // Stores new angle for beanbag animation
+var animateLamps = false; // Defines lamp animation
+var shadeHeight = 58; // Height of lamp shades
 
 // Handle keydown
 function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
@@ -654,11 +667,13 @@ function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
     tvOn = !tvOn;
   } else if (ev.keyCode == 66) { // B was pressed
     newBeanBagAngle = beanBagAngle + 90;
+  } else if (ev.keyCode == 76) { // L was pressed
+    animateLamps = true;
   } else { return; }
 
   // Update lookAt with new coordinates
   mvpMatrix.setPerspective(g_perspX, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(20, g_viewY, 20, 0, 0, 0, 0, 1, 0);
+  mvpMatrix.lookAt(30, g_viewY, 30, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 }
