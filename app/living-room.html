@@ -6,22 +6,42 @@
   </head>
 
   <body onload="main()">
-    <canvas id="webgl" width="700" height="700">
+    <canvas id="webgl" width="800" height="500">
       Please use a browser that supports "canvas"
     </canvas>
-    <p style="font-family: Arial, Helvetica, sans-serif;">
-      Change perspective: <i>arrow keys</i>
-      </br>
-      Zoom in: <i>Z</i>
-      </br>
-      Zoom out: <i>X</i>
-      </br>
-      Turn on TV: <i>T</i>
-      </br>
-      Rotate beanbag: <i>B</i>
-      </br>
-      Toggle lights: <i>L</i>
-    </p>
+    <div>
+      <h2 style="font-family: Arial, Helvetica, sans-serif;">Controls:</h2>
+      <table style="font-family: Arial, Helvetica, sans-serif;">
+        <tr>
+          <td>Tilt:</td>
+          <td>&#8593; &#8595; arrow keys</td>
+        </tr>
+        <tr>
+          <td>Rotate:</td>
+          <td>&#8592; &#8594; arrow keys</td>
+        </tr>
+        <tr>
+          <td>Zoom in:</td>
+          <td>Z</td>
+        </tr>
+        <tr>
+          <td>Zoom out:</td>
+          <td>X</td>
+        </tr>
+        <tr>
+          <td>Toggle TV:</td>
+          <td>T</td>
+        </tr>
+        <tr>
+          <td>Toggle lights:</td>
+          <td>L</td>
+        </tr>
+        <tr>
+          <td>Rotate beanbag:</td>
+          <td>B</td>
+        </tr>
+      </table>
+    </div>
 
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>

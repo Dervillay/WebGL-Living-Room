@@ -5,7 +5,6 @@
 // Vertex shader program
 var VSHADER_SOURCE =
   'attribute vec4 a_Position;\n' +
-  'attribute vec4 a_Color;\n' +
   'attribute vec4 a_Normal;\n' +
   'attribute vec2 a_TexCoord;\n' +
   'uniform mat4 u_MvpMatrix;\n' +
@@ -23,18 +22,18 @@ var VSHADER_SOURCE =
   '  vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));\n' +
      // Calculate world coordinate of vertex
   '  vec4 vertexPosition = u_ModelMatrix * a_Position;\n' +
-     // Add texture coords
-  '  v_TexCoord = a_TexCoord;\n' +  
      // Calculate the light direction and make it 1.0 in length
   '  vec3 lightDirection = normalize(u_LightPosition - vec3(vertexPosition));\n' +
      // The dot product of the light direction and the normal
   '  float nDotL = max(dot(lightDirection, normal), 0.0);\n' +
      // Calculate the color due to diffuse reflection
-  '  vec3 diffuse = u_LightColor * a_Color.rgb * nDotL;\n' +
+  '  vec3 diffuse = u_LightColor * nDotL;\n' +
      // Calculate the color due to ambient reflection
-  '  vec3 ambient = u_AmbientLight * a_Color.rgb;\n' +
+  '  vec3 ambient = u_AmbientLight;\n' +
      // Add the surface colors due to diffuse reflection and ambient reflection
-  '  v_Color = vec4(diffuse + ambient, a_Color.a);\n' +  
+  '  v_Color = vec4(diffuse + ambient, 1);\n' +  
+     // Add texture coords
+  '  v_TexCoord = a_TexCoord;\n' +  
   '}\n';
 
 // Fragment shader program
@@ -48,8 +47,7 @@ var FSHADER_SOURCE =
   'varying vec4 v_Color;\n' +
   'void main() {\n' +
   '  vec4 color = texture2D(u_Texture, v_TexCoord);\n' +
-  '  gl_FragColor = vec4(color.rgb * u_Intensity, color.a);\n' +
-  //'  gl_FragColor = v_Color;\n' +
+  '  gl_FragColor = vec4(v_Color.rgb * color.rgb * u_Intensity, color.a);\n' +
   '}\n';
 
 ////////////
@@ -73,16 +71,6 @@ function main() {
     return;
   }
 
-  // Array of colors for cube
-  var colors1 = new Float32Array([
-    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v1-v2-v3 front
-    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v3-v4-v5 right
-    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v5-v6-v1 up
-    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v1-v6-v7-v2 left
-    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v7-v4-v3-v2 down
-    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0　    // v4-v7-v6-v5 back
-  ]);
-
   // Set the clear color and enable the depth test
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
@@ -92,7 +80,6 @@ function main() {
   // Get the storage locations of attribute variables
   program.a_Position = gl.getAttribLocation(program, 'a_Position');
   program.a_Normal = gl.getAttribLocation(program, 'a_Normal');
-  program.a_Color = gl.getAttribLocation(program, 'a_Color');
   program.a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
 
   // Get the storage locations of uniform variables
@@ -104,10 +91,9 @@ function main() {
   program.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
   program.u_Intensity = gl.getUniformLocation(program, 'u_Intensity');
 
-  if (program.a_Position < 0 ||  program.a_Normal < 0 || program.a_Color < 0 ||
-      !program.u_MvpMatrix || !program.u_NormalMatrix || !program.u_ModelMatrix ||
-      !program.u_LightColor || !program.u_LightPosition || !program.u_AmbientLight ||
-      !program.u_Intensity) {
+  if (program.a_Position < 0 ||  program.a_Normal < 0 || !program.u_MvpMatrix || 
+      !program.u_NormalMatrix || !program.u_ModelMatrix || !program.u_LightColor ||
+      !program.u_LightPosition || !program.u_AmbientLight || !program.u_Intensity) {
     console.log('Failed to get variable storage location'); 
     return;
   }
@@ -115,10 +101,10 @@ function main() {
   // Set the light color (white)
   gl.uniform3f(program.u_LightColor, 1.0, 1.0, 1.0);
   // Set the light direction (in the world coordinate)
-  gl.uniform3f(program.u_LightPosition, 2.3, 4.0, 3.5);
+  gl.uniform3f(program.u_LightPosition, 0.0, 3.0, 0.0);
   // Set the ambient light
-  gl.uniform3f(program.u_AmbientLight, 0.3, 0.3, 0.3);
-  // Set instensity
+  gl.uniform3f(program.u_AmbientLight, 0.2, 0.2, 0.2);
+  // Set light instensity
   gl.uniform1f(program.u_Intensity, lightIntensity);
 
   var modelMatrix = new Matrix4();  // Model matrix
@@ -149,7 +135,7 @@ function main() {
 
   // Prepare empty buffer objects for vertex coordinates, colors and normals
   //var OBJmodel = initVertexBuffersOBJ(gl, program);
-  var model = initVertexBuffers(gl, colors1, model, 0.79, 0.79, 0.72, 1);
+  var model = initVertexBuffers(gl);
 
   // Read OBJ file
   readOBJFile("../models/mug.obj", gl, 0.5, true);
@@ -738,7 +724,7 @@ function initVertexBuffersOBJ(gl, program) {
 }
 
 // Create and initialise a buffer object for cubes
-function initVertexBuffers(gl, colors, model, r, g, b, a) {
+function initVertexBuffers(gl) {
 
   // Array of vertices for unit cube
   var vertices = new Float32Array([
@@ -780,9 +766,8 @@ function initVertexBuffers(gl, colors, model, r, g, b, a) {
    20,21,22,  20,22,23     // back
   ]);
 
-  // Write the vertex property to buffers (coordinates, colors and normals)
+  // Write the vertex property to buffers (coordinates, texture coordinates and normals)
   if (!initArrayBuffer(gl, 'a_Position', vertices, 3, gl.FLOAT)) return -1;
-  if (!initArrayBuffer(gl, 'a_Color', colors, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_Normal', normals, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_TexCoord', texCoords, 2, gl.FLOAT)) return -1;
 
