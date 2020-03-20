@@ -35,11 +35,16 @@ var FSHADER_SOURCE =
   '#endif\n' +
   'uniform sampler2D u_Texture;\n' +
   'uniform float u_Intensity;\n' +
+  'uniform float u_IgnoreLighting;\n' +
   'varying vec2 v_TexCoord;\n' +
   'varying vec4 v_Lighting;\n' +
   'void main() {\n' +
   '  vec4 color = texture2D(u_Texture, v_TexCoord);\n' +
-  '  gl_FragColor = vec4(v_Lighting.rgb * color.rgb * u_Intensity, color.a);\n' +
+  '  if (u_IgnoreLighting == 1.0) {\n' +
+  '     gl_FragColor = vec4(color.rgb, color.a);\n' +
+  '  } else {\n' +
+  '     gl_FragColor = vec4(v_Lighting.rgb * color.rgb * u_Intensity, color.a);\n' +
+  '  }\n' +
   '}\n';
 
 //-------------
@@ -88,11 +93,12 @@ function main() {
   program.u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
   program.u_AmbientLight = gl.getUniformLocation(program, 'u_AmbientLight');
   program.u_Intensity = gl.getUniformLocation(program, 'u_Intensity');
+  program.u_IgnoreLighting = gl.getUniformLocation(program, 'u_IgnoreLighting');
 
   if (program.a_Position < 0 ||  program.a_Normal < 0 || program.a_TexCoord < 0 ||
       !program.u_MvpMatrix || !program.u_NormalMatrix || !program.u_ModelMatrix ||
       !program.u_LightColor || !program.u_LightPosition || !program.u_AmbientLight ||
-      !program.u_Intensity) {
+      !program.u_Intensity || !program.u_IgnoreLighting) {
     console.log('Failed to get variable storage location'); 
     return;
   }
@@ -100,11 +106,13 @@ function main() {
   // Set light color to white
   gl.uniform3f(program.u_LightColor, 1.0, 1.0, 1.0);
   // Set the light position
-  gl.uniform3f(program.u_LightPosition, 0.0, 3.0, 0.0);
+  gl.uniform3f(program.u_LightPosition, 0.0, 2.8, 0.0);
   // Set the ambient light
   gl.uniform3f(program.u_AmbientLight, 0.2, 0.2, 0.2);
   // Set light instensity
   gl.uniform1f(program.u_Intensity, lightIntensity);
+  // Set ignore lighting to 0
+  gl.uniform1f(program.u_IgnoreLighting, 0);
 
   var modelMatrix = new Matrix4();  // Model matrix
   var mvpMatrix = new Matrix4();    // Model view projection matrix
@@ -249,7 +257,7 @@ function main() {
     }
 
     // Draw scene and request next frame
-    draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix);
+    draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix, program);
     window.requestAnimationFrame(update);
   }
 
@@ -266,7 +274,7 @@ var rotationAngle = 0;
 var g_modelMatrix = new Matrix4(), g_mvpMatrix = new Matrix4(), g_normalMatrix = new Matrix4();
 
 // Draw models
-function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -343,7 +351,7 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   drawCabinet(gl, model, 0.8, 19.5, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Draw TV as child of cabinet
-  drawTV(gl, model, 0.0, 1.0, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawTV(gl, model, 0.0, 1.0, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Assign speaker 1 as child of carpet
@@ -617,7 +625,7 @@ function drawCabinet(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
-function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
   // Set texture to iron
   gl.bindTexture(gl.TEXTURE_2D, textures[4]);
 
@@ -640,6 +648,7 @@ function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix)
   // Set texture to gloss if off, or soundwave if on
   if (tvOn) {
     gl.bindTexture(gl.TEXTURE_2D, textures[12]);
+    gl.uniform1f(program.u_IgnoreLighting, 1);
   } else {
     gl.bindTexture(gl.TEXTURE_2D, textures[8]);
   }
@@ -649,6 +658,8 @@ function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix)
   g_modelMatrix.translate(0.1, 25.0, 0.0);
   drawBox(gl, model, 0.2, 18.0, 1.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
+
+  gl.uniform1f(program.u_IgnoreLighting, 0);
 }
 
 function drawSpeaker(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
