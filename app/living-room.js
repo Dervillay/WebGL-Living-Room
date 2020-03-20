@@ -42,9 +42,9 @@ var FSHADER_SOURCE =
   '  gl_FragColor = vec4(v_Lighting.rgb * color.rgb * u_Intensity, color.a);\n' +
   '}\n';
 
-////////////
-/// MAIN ///
-////////////
+//-------------
+// MAIN
+//-------------
 
 function main() {
   // Retrieve <canvas> element
@@ -66,6 +66,12 @@ function main() {
   // Set the clear color to white and enable the depth test
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
+
+  // Initialise textures
+  if (!initTextures(gl)) {
+    console.log('Failed to intialize the texture.');
+    return;
+  }
 
   var program = gl.program;
 
@@ -120,23 +126,81 @@ function main() {
   normalMatrix.transpose();
   gl.uniformMatrix4fv(program.u_NormalMatrix, false, normalMatrix.elements);
 
-  // Initialise textures
-  if (!initTextures(gl)) {
-    console.log('Failed to intialize the texture.');
-    return;
-  }
-
   // Prepare empty buffer objects for vertex coordinates and normals
   var model = initVertexBuffers(gl);
   
   // Draw on each call of update
   function update() {
     // Handle key presses
-    document.onkeydown = function(ev){ keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix); }
+    document.onkeydown = function (ev) {
 
-    // Draw scene and request next frame
-    draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix);
-    requestAnimationFrame(update, canvas);
+      // Store current keypress in dictionary
+      keyDown[ev.keyCode] = true;
+
+      // Handle key input
+      if(keyDown[39] == true) { // The right arrow key was pressed
+        rotationAngle = (rotationAngle - 3) % 360;
+      } 
+
+      if (keyDown[37] == true) { // The left arrow key was pressed
+        rotationAngle = (rotationAngle + 3) % 360;
+      } 
+
+      if (keyDown[38] == true) { // The up arrow key was pressed
+        if (g_viewY < 50) {
+          g_viewY += 1;
+        }
+      }
+
+      if (keyDown[40] == true) { // The down arrow key was pressed
+        if (g_viewY > 0) {
+          g_viewY -= 1; 
+        }
+      }
+
+      if (keyDown[90] == true) { // Z was pressed
+        if (g_viewX > 10) {
+          g_viewX -= 1; 
+        }
+      }
+
+      if (keyDown[88] == true) { // X was pressed
+        if (g_viewX < 50) {
+          g_viewX += 1;
+        }
+      }
+
+      if (keyDown[84] == true) { // T was pressed
+        tvOn = !tvOn;
+      }
+
+      if (keyDown[66] == true) { // B was pressed
+        newBeanBagAngle = beanBagAngle + 90;
+      }
+
+      if (keyDown[76] == true) { // L was pressed
+        animateLamps = true;
+        lightOn = !lightOn;
+      }
+
+      // Update perspective and lookAt with new coordinates
+      viewMatrix = new Matrix4().setIdentity();
+
+      // mat4.translate(viewMatrix.elements, viewMatrix.elements, vec3.fromValues(0,0,1));
+      // mat4.rotateX(viewMatrix.elements, viewMatrix.elements, g_viewX);
+      // mat4.rotateY(viewMatrix.elements, viewMatrix.elements, g_viewY);
+
+      // mvpMatrix.set(mvpMatrix);
+      // mvpMatrix.multiply(viewMatrix);
+
+      mvpMatrix.setPerspective(g_viewX, canvas.width/canvas.height, 1, 100);
+      mvpMatrix.lookAt(30, g_viewY, 30, 0, 0, 0, 0, 1, 0);
+      mvpMatrix.multiply(modelMatrix);
+    };
+    
+    document.onkeyup = function(ev) {
+      keyDown[ev.keyCode] = false;
+    };
 
     // Animate speakers if TV is on
     if (tvOn) {
@@ -184,9 +248,12 @@ function main() {
       gl.uniform1f(program.u_Intensity, lightIntensity);
     }
 
+    // Draw scene and request next frame
+    draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix);
+    window.requestAnimationFrame(update);
   }
 
-  update();
+  window.requestAnimationFrame(update);
 }
 
 //------------------
@@ -617,8 +684,10 @@ function popMatrix() {
   return g_matrixStack.pop();
 }
 
+var keyDown = {}; // Dictionary to store keypresses
+
 var g_viewY = 30; // Initial Y coord for virtual camera position
-var g_perspX = 30; // Inital X coord for virtual camera lookat position
+var g_viewX = 30; // Inital X coord for virtual camera position
 
 var tvOn = false; // Whether TV is on or off
 var scale = 0; // Scales objects for animations
@@ -629,45 +698,6 @@ var animateLamps = false; // Defines lamp animation
 var shadeHeight = 58; // Height of lamp shades
 var lightIntensity = 1; // Intensity of light
 var lightOn = true; // Defines whether light is on
-
-// Handle keydown
-function keydown(gl, ev, program, canvas, mvpMatrix, modelMatrix) {
-  // Handle key input
-  if(ev.keyCode == 39) { // The right arrow key was pressed
-    rotationAngle = (rotationAngle - 3) % 360;
-  } else if (ev.keyCode == 37) { // The left arrow key was pressed
-    rotationAngle = (rotationAngle + 3) % 360;
-  } else if (ev.keyCode == 38) { // The up arrow key was pressed
-    if (g_viewY < 50) {
-      g_viewY += 1;
-    }
-  } else if (ev.keyCode == 40) { // The down arrow key was pressed
-    if (g_viewY > 0) {
-      g_viewY -= 1; 
-    }
-  } else if (ev.keyCode == 90) { // Z was pressed
-    if (g_perspX > 10) {
-      g_perspX -= 1; 
-    }
-  } else if (ev.keyCode == 88) { // X was pressed
-    if (g_perspX < 50) {
-      g_perspX += 1;
-    }
-  } else if (ev.keyCode == 84) { // T was pressed
-    tvOn = !tvOn;
-  } else if (ev.keyCode == 66) { // B was pressed
-    newBeanBagAngle = beanBagAngle + 90;
-  } else if (ev.keyCode == 76) { // L was pressed
-    animateLamps = true;
-    lightOn = !lightOn;
-  } else { return; }
-
-  // Update perspective and lookAt with new coordinates
-  mvpMatrix.setPerspective(g_perspX, canvas.width/canvas.height, 1, 100);
-  mvpMatrix.lookAt(30, g_viewY, 30, 0, 0, 0, 0, 1, 0);
-  mvpMatrix.multiply(modelMatrix);
-  gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
-}
 
 // Create and initialise a buffer object for cubes
 function initVertexBuffers(gl) {
