@@ -139,76 +139,71 @@ function main() {
   
   // Draw on each call of update
   function update() {
-    // Handle key presses
+
+    // Handle key-down
     document.onkeydown = function (ev) {
-
-      // Store current keypress in dictionary
       keyDown[ev.keyCode] = true;
-
-      // Handle key input
-      if(keyDown[39] == true) { // The right arrow key was pressed
-        rotationAngle = (rotationAngle - 3) % 360;
-      } 
-
-      if (keyDown[37] == true) { // The left arrow key was pressed
-        rotationAngle = (rotationAngle + 3) % 360;
-      } 
-
-      if (keyDown[38] == true) { // The up arrow key was pressed
-        if (g_viewY < 50) {
-          g_viewY += 1;
-        }
-      }
-
-      if (keyDown[40] == true) { // The down arrow key was pressed
-        if (g_viewY > 0) {
-          g_viewY -= 1; 
-        }
-      }
-
-      if (keyDown[90] == true) { // Z was pressed
-        if (g_viewX > 10) {
-          g_viewX -= 1; 
-        }
-      }
-
-      if (keyDown[88] == true) { // X was pressed
-        if (g_viewX < 50) {
-          g_viewX += 1;
-        }
-      }
-
-      if (keyDown[84] == true) { // T was pressed
-        tvOn = !tvOn;
-      }
-
-      if (keyDown[66] == true) { // B was pressed
-        newBeanBagAngle = beanBagAngle + 90;
-      }
-
-      if (keyDown[76] == true) { // L was pressed
-        animateLamps = true;
-        lightOn = !lightOn;
-      }
-
-      // Update perspective and lookAt with new coordinates
-      viewMatrix = new Matrix4().setIdentity();
-
-      // mat4.translate(viewMatrix.elements, viewMatrix.elements, vec3.fromValues(0,0,1));
-      // mat4.rotateX(viewMatrix.elements, viewMatrix.elements, g_viewX);
-      // mat4.rotateY(viewMatrix.elements, viewMatrix.elements, g_viewY);
-
-      // mvpMatrix.set(mvpMatrix);
-      // mvpMatrix.multiply(viewMatrix);
-
-      mvpMatrix.setPerspective(g_viewX, canvas.width/canvas.height, 1, 100);
-      mvpMatrix.lookAt(30, g_viewY, 30, 0, 0, 0, 0, 1, 0);
-      mvpMatrix.multiply(modelMatrix);
     };
-    
-    document.onkeyup = function(ev) {
+
+    // Handle key-up
+    document.onkeyup = function (ev) {
       keyDown[ev.keyCode] = false;
     };
+
+    // Handle each input
+    if (keyDown[39] == true) { // The right arrow key was pressed
+      rotationAngle = (rotationAngle - 1) % 360;
+    } 
+
+    if (keyDown[37] == true) { // The left arrow key was pressed
+      rotationAngle = (rotationAngle + 1) % 360;
+    } 
+
+    if (keyDown[38] == true) { // The up arrow key was pressed
+      if (g_viewY < 50) {
+        g_viewY += 0.5;
+      }
+    }
+
+    if (keyDown[40] == true) { // The down arrow key was pressed
+      if (g_viewY > 0) {
+        g_viewY -= 0.5; 
+      }
+    }
+
+    if (keyDown[90] == true) { // Z was pressed
+      if (g_viewX > 10) {
+        g_viewX -= 0.5; 
+      }
+    }
+
+    if (keyDown[88] == true) { // X was pressed
+      if (g_viewX < 50) {
+        g_viewX += 0.5;
+      }
+    }
+
+    if (keyDown[84] == true) { // T was pressed
+      tvOn = !tvOn;
+      keyDown[84] = false;
+    }
+
+    if (keyDown[66] == true) { // B was pressed
+      newBeanBagAngle = beanBagAngle + 90;
+    }
+
+    if (keyDown[76] == true) { // L was pressed
+      animateLamps = true;
+      lightOn = !lightOn;
+      keyDown[76] = false;
+    }
+
+    // Update perspective and lookAt with new coordinates
+    viewMatrix = new Matrix4().setIdentity();
+
+    mvpMatrix.setPerspective(g_viewX, canvas.width/canvas.height, 1, 100);
+    mvpMatrix.lookAt(30, g_viewY, 30, 0, 0, 0, 0, 1, 0);
+    mvpMatrix.multiply(modelMatrix);
 
     // Animate speakers if TV is on
     if (tvOn) {
