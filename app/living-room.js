@@ -832,9 +832,9 @@ function initCylinderVertexBuffers(gl) {
     normals.push(0.0, 1.0, 0.0);
     normals.push(0.0, 1.0, 0.0);
     normals.push(0.0, 1.0, 0.0);
-    texCoords.push(0.5, 1.0);
-    texCoords.push(0.0, 0.0);
-    texCoords.push(1.0, 0.0);
+    texCoords.push(0.5, 0.5);
+    texCoords.push(radius * Math.cos(theta, 0.0), radius * Math.sin(theta));
+    texCoords.push(radius * Math.cos(nextTheta, 0.0), radius * Math.sin(nextTheta));
 
     // Side face
     vertices.push(radius * Math.cos(theta), halfLength, radius * Math.sin(theta));
@@ -845,9 +845,9 @@ function initCylinderVertexBuffers(gl) {
     normals.push(Math.cos(nextTheta), 0.0, Math.sin(nextTheta));
     normals.push(Math.cos(nextTheta), 0.0, Math.sin(nextTheta));
     normals.push(Math.cos(theta), 0.0, Math.sin(theta));
-    texCoords.push(0.0, 1.0);
-    texCoords.push(1.0, 1.0);
-    texCoords.push(1.0, 0.0);
+    texCoords.push(0.0, i/slices);
+    texCoords.push(i+1/slices, i+1/slices);
+    texCoords.push(i+1/slices, 0.0);
     texCoords.push(0.0, 0.0);
 
     // Slice of bottom face
@@ -857,9 +857,9 @@ function initCylinderVertexBuffers(gl) {
     normals.push(0.0, -1.0, 0.0);
     normals.push(0.0, -1.0, 0.0);
     normals.push(0.0, -1.0, 0.0);
-    texCoords.push(0.0, 0.0);
-    texCoords.push(1.0, 0.0);
-    texCoords.push(0.5, 1.0);
+    texCoords.push(radius * Math.cos(theta, 0.0), radius * Math.sin(theta));
+    texCoords.push(radius * Math.cos(nextTheta, 0.0), radius * Math.sin(nextTheta));
+    texCoords.push(0.5, 0.5);
 
     // TODO: Figure out proper texCoords
   }
