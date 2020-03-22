@@ -133,9 +133,6 @@ function main() {
   normalMatrix.setInverseOf(modelMatrix);
   normalMatrix.transpose();
   gl.uniformMatrix4fv(program.u_NormalMatrix, false, normalMatrix.elements);
-
-  // Prepare empty buffer objects for vertex coordinates and normals
-  var model = initVertexBuffers(gl);
   
   // Draw on each call of update
   function update() {
@@ -188,8 +185,9 @@ function main() {
       keyDown[84] = false;
     }
 
-    if (keyDown[66] == true) { // B was pressed
-      newBeanBagAngle = beanBagAngle + 90;
+    if (keyDown[82] == true) { // R was pressed
+      newRugAngle = rugAngle + 90;
+      keyDown[82] = false;
     }
 
     if (keyDown[76] == true) { // L was pressed
@@ -223,8 +221,8 @@ function main() {
     }
 
     // Rotate bean bag
-    if (beanBagAngle != newBeanBagAngle) {
-      beanBagAngle += 1;
+    if (rugAngle != newRugAngle) {
+      rugAngle += 3;
     }
 
     // Animate lamp shades
@@ -252,7 +250,7 @@ function main() {
     }
 
     // Draw scene and request next frame
-    draw(gl, model, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix, program);
+    draw(gl, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix, program);
     window.requestAnimationFrame(update);
   }
 
@@ -269,7 +267,11 @@ var rotationAngle = 0;
 var g_modelMatrix = new Matrix4(), g_mvpMatrix = new Matrix4(), g_normalMatrix = new Matrix4();
 
 // Draw models
-function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
+function draw(gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
+
+  // Prepare vertex buffers for cubes
+  var model = initCubeVertexBuffers(gl);
+
   // Clear color and depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -279,7 +281,7 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
   // Draw carpet
   g_modelMatrix.setTranslate(0.0, 0.0, 0.0);
   g_modelMatrix.rotate(rotationAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 10, 0.1, 10, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 10, 0.1, 10, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Assign following models as all part of table
   pushMatrix(g_modelMatrix);
@@ -287,12 +289,18 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
   // Draw table
   drawTable(gl, model, -0.3, 19.5, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
+  // Change shape to cylinder
+  var model = initCylinderVertexBuffers(gl);
+
   // Draw coaster 1
   drawCoaster(gl, model, 0.6, 1.3, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Draw coaster 2
   drawCoaster(gl, model, -0.6, 1.3, -0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix)
   
+  // Change shape to cube
+  var model = initCubeVertexBuffers(gl);
+
   // Draw remote
   drawRemote(gl, model, -0.6, 1.3, 0.6, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
@@ -366,7 +374,7 @@ function draw(gl, model, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
 
 
 // Draw cuboid of specified dimensions
-function drawBox(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+function drawShape(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
 
   // Scale box dimensions
   g_modelMatrix.scale(width, height, depth);
@@ -385,30 +393,31 @@ function drawBox(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u
   gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
 }
 
+
 function drawLongSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   // Set texture to suede
   gl.bindTexture(gl.TEXTURE_2D, textures[3]);
 
   // Back of sofa
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.05, 18, 0.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.05, 18, 0.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Front of sofa
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(2.0, -0.6, 0.0);
-  drawBox(gl, model, 2.5, 0.4, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 2.5, 0.4, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Arm 1
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(1.8, -0.4, -1.1);
-  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Arm 2
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(1.8, -0.4, 1.1);
-  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -419,24 +428,24 @@ function drawShortSofa(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_Normal
   // Back of sofa
   g_modelMatrix.translate(x, y, z);
   g_modelMatrix.rotate(90, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 0.05, 18, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.05, 18, 0.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Front of sofa
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(2.0, -0.6, 0.0);
-  drawBox(gl, model, 2.5, 0.4, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 2.5, 0.4, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Arm 1
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(1.8, -0.4, -1.1);
-  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Arm 2
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(1.8, -0.4, 1.1);
-  drawBox(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 2.7, 0.6, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -447,7 +456,7 @@ function drawCoaster(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
   // Coaster
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.15, 0.2, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.4, 0.2, 0.25, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -458,7 +467,7 @@ function drawRemote(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMat
   // Coaster
   g_modelMatrix.translate(x, y, z);
   g_modelMatrix.rotate(30, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 0.45, 0.3, 0.08, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.45, 0.3, 0.08, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Set texture to plastic
   gl.bindTexture(gl.TEXTURE_2D, textures[9]);
@@ -466,23 +475,29 @@ function drawRemote(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMat
   // Button 1
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.5, 1.0, 0.0);
-  drawBox(gl, model, 0.3, 0.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.3, 0.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Button 2
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.2, 1.0, 0.0);
-  drawBox(gl, model, 0.2, 0.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.2, 0.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Set texture to power button
   gl.bindTexture(gl.TEXTURE_2D, textures[11]);
 
+  // Change shape to cylinder
+  var model = initCylinderVertexBuffers(gl);
+
   // Power button
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(0.8, 1.0, 0.4);
-  drawBox(gl, model, 0.08, 0.5, 0.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix.translate(0.8, 1.0, 0.6);
+  drawShape(gl, model, 0.15, 0.5, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
+
+  // Change shape to cube
+  var model = initCubeVertexBuffers(gl);
 }
 
 function drawTable(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
@@ -492,30 +507,30 @@ function drawTable(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatr
 
   // Tabletop
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.15, 2, 0.25, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.15, 2, 0.25, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Leg 1
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.9, -5, 0.9);
-  drawBox(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 2
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.9, -5, 0.9);
-  drawBox(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 3
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.9, -5, -0.9);
-  drawBox(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 4
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.9, -5, -0.9);
-  drawBox(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, 4, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -523,41 +538,47 @@ function drawLamp(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatri
   // Set texture to iron
   gl.bindTexture(gl.TEXTURE_2D, textures[4]);
 
+  // Change shape to cylinder
+  var model = initCylinderVertexBuffers(gl);
+
   // Base
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.1, 1, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.3, 1, 0.3, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Pole
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0, 30, 0);
-  drawBox(gl, model, 0.1, 30, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.07, 60, 0.07, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Set texture to canvas
   gl.bindTexture(gl.TEXTURE_2D, textures[5]);
 
+  // Change shape to cube
+  var model = initCubeVertexBuffers(gl);
+
   // Shade 1
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(0, shadeHeight, -1.1);
-  drawBox(gl, model, 1.2, 7, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix.translate(0, shadeHeight, -0.4);
+  drawShape(gl, model, 0.4, 7, 0.033, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Shade 2
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(-1.1, shadeHeight, 0);
-  drawBox(gl, model, 0.1, 7, 1.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix.translate(-0.4, shadeHeight, 0);
+  drawShape(gl, model, 0.033, 7, 0.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Shade 3
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(0, shadeHeight, 1.1);
-  drawBox(gl, model, 1.2, 7, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix.translate(0, shadeHeight, 0.4);
+  drawShape(gl, model, 0.4, 7, 0.033, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Shade 4
   pushMatrix(g_modelMatrix);
-  g_modelMatrix.translate(1.1, shadeHeight, 0);
-  drawBox(gl, model, 0.1, 7, 1.2, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix.translate(0.4, shadeHeight, 0);
+  drawShape(gl, model, 0.033, 7, 0.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -567,17 +588,23 @@ function drawRug(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix
 
   // Rug
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.25, 1, 0.35, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  g_modelMatrix.rotate(rugAngle, 0.0, 1.0, 0.0);
+  drawShape(gl, model, 0.25, 1, 0.35, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 }
 
 function drawBeanbag(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
   // Set texture to wool
   gl.bindTexture(gl.TEXTURE_2D, textures[7]);
+
+  // Set shape to cylinder
+  model = initCylinderVertexBuffers(gl);
   
   // Back of sofa
   g_modelMatrix.translate(x, y, z);
-  g_modelMatrix.rotate(beanBagAngle, 0.0, 1.0, 0.0);
-  drawBox(gl, model, 0.15, 10, 0.15, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.4, 15, 0.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+
+  // Set shape to cube
+  model = initCubeVertexBuffers(gl);
 }
 
 function drawCabinet(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
@@ -586,37 +613,37 @@ function drawCabinet(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
 
   // Top
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.15, 2, 0.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.15, 2, 0.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Shelf
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.0, -6.0, 0.0);
-  drawBox(gl, model, 1.0, 1.0, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 1.0, 1.0, 1.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 1
   pushMatrix(g_modelMatrix);
   var legLength = 4;
   g_modelMatrix.translate(0.9, -1-legLength, 0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 2
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.9, -1-legLength, 0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 3
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.9, -1-legLength, -0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Leg 4
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-0.9, -1-legLength, -0.9);
-  drawBox(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, legLength, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -626,18 +653,18 @@ function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix,
 
   // Base
   g_modelMatrix.translate(x, y, z);
-  drawBox(gl, model, 0.7, 0.5, 0.6, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.7, 0.5, 0.6, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Stem
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.5, 15.0, 0.0);
-  drawBox(gl, model, 0.15, 15.0, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.15, 15.0, 0.1, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Back
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.15, 25.0, 0.0);
-  drawBox(gl, model, 0.2, 20.0, 1.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.2, 20.0, 1.5, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Set texture to gloss if off, or soundwave if on
@@ -651,7 +678,7 @@ function drawTV(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMatrix,
   // Screen
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(0.1, 25.0, 0.0);
-  drawBox(gl, model, 0.2, 18.0, 1.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.2, 18.0, 1.4, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   gl.uniform1f(program.u_IgnoreLighting, 0);
@@ -664,7 +691,7 @@ function drawSpeaker(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
   // Speaker body
   g_modelMatrix.translate(x, y, z);
 
-  drawBox(gl, model, 0.1*scale, 15.0*scale, 0.1*scale, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1*scale, 15.0*scale, 0.1*scale, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Set texture to mesh
   gl.bindTexture(gl.TEXTURE_2D, textures[10]);
@@ -672,7 +699,7 @@ function drawSpeaker(gl, model, x, y, z, viewProjMatrix, u_MvpMatrix, u_NormalMa
   // Speaker mesh
   pushMatrix(g_modelMatrix);
   g_modelMatrix.translate(-1.0, 0.0, 0.0);
-  drawBox(gl, model, 0.1, 0.9, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawShape(gl, model, 0.1, 0.9, 0.8, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
@@ -698,19 +725,19 @@ var g_viewX = 30; // Inital X coord for virtual camera position
 var tvOn = false; // Whether TV is on or off
 var scale = 0; // Scales objects for animations
 var growing = true; // Indicates direction for animations
-var beanBagAngle = 35; // Rotation (in degrees) of beanbag
-var newBeanBagAngle = 35; // Stores new angle for beanbag animation
+var rugAngle = 0; // Rotation (in degrees) of rug
+var newRugAngle = 0; // Stores new angle for rug animation
 var animateLamps = false; // Defines lamp animation
 var shadeHeight = 58; // Height of lamp shades
 var lightIntensity = 1; // Intensity of light
 var lightOn = true; // Defines whether light is on
 
 // Create and initialise a buffer object for cubes
-function initVertexBuffers(gl) {
+function initCubeVertexBuffers(gl) {
 
   // Array of vertices for unit cube
   var vertices = new Float32Array([
-    1.0, 1.0, 1.0,  -1.0, 1.0, 1.0,  -1.0,-1.0, 1.0,   1.0,-1.0, 1.0, // v0-v1-v1-v3 front
+    1.0, 1.0, 1.0,  -1.0, 1.0, 1.0,  -1.0,-1.0, 1.0,   1.0,-1.0, 1.0, // v0-v1-v2-v3 front
     1.0, 1.0, 1.0,   1.0,-1.0, 1.0,   1.0,-1.0,-1.0,   1.0, 1.0,-1.0, // v0-v3-v4-v5 right
     1.0, 1.0, 1.0,   1.0, 1.0,-1.0,  -1.0, 1.0,-1.0,  -1.0, 1.0, 1.0, // v0-v5-v6-v1 up
    -1.0, 1.0, 1.0,  -1.0, 1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0,-1.0, 1.0, // v1-v6-v7-v1 left
@@ -747,6 +774,116 @@ function initVertexBuffers(gl) {
    16,17,18,  16,18,19,    // down
    20,21,22,  20,22,23     // back
   ]);
+
+  // Write the vertex property to buffers (coordinates, texture coordinates and normals)
+  if (!initArrayBuffer(gl, 'a_Position', vertices, 3, gl.FLOAT)) return -1;
+  if (!initArrayBuffer(gl, 'a_Normal', normals, 3, gl.FLOAT)) return -1;
+  if (!initArrayBuffer(gl, 'a_TexCoord', texCoords, 2, gl.FLOAT)) return -1;
+
+  // Unbind the buffer object
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+  // Write the indices to the buffer object
+  var indexBuffer = gl.createBuffer();
+  if (!indexBuffer) {
+    console.log('Failed to create the buffer object');
+    return false;
+  }
+
+  // Bind buffer object and store indices
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+  return indices.length;
+}
+
+// Create and initialise a buffer object for cylinders
+function initCylinderVertexBuffers(gl) {
+
+  // Initialise dimension variables
+  var radius = 0.5;
+  var halfLength = 0.5;
+  var slices = 20;
+
+  // Delta angle to allow calculation of texture vertices
+  var deltaAngle = (2.0 * Math.PI)/slices;
+
+  // Array of vertices for unit cube
+  var vertices = [];
+
+  // Normals of cube
+  var normals = [];
+
+  // Texture coordinates
+  var texCoords = [];
+
+  // Indices of the vertices
+  var indices = [];
+
+  // Populate arrays
+  for (var i = 0; i < slices; i++) {
+    var theta = (i / slices) * 2.0 * Math.PI;
+    var nextTheta = ((i+1) / slices) * 2.0 * Math.PI;
+
+    // Generate vertices
+    vertices.push(0.0, halfLength, 0.0);
+    vertices.push(radius * Math.cos(theta), halfLength, radius * Math.sin(theta));
+    vertices.push(radius * Math.cos(nextTheta), halfLength, radius * Math.sin(nextTheta));
+    normals.push(0.0, 1.0, 0.0);
+    normals.push(0.0, 1.0, 0.0);
+    normals.push(0.0, 1.0, 0.0);
+    texCoords.push(0.5, 1.0);
+    texCoords.push(0.0, 0.0);
+    texCoords.push(1.0, 0.0);
+
+    // Side face
+    vertices.push(radius * Math.cos(theta), halfLength, radius * Math.sin(theta));
+    vertices.push(radius * Math.cos(nextTheta), halfLength, radius * Math.sin(nextTheta));
+    vertices.push(radius * Math.cos(nextTheta), -halfLength, radius * Math.sin(nextTheta));
+    vertices.push(radius * Math.cos(theta), -halfLength, radius * Math.sin(theta));
+    normals.push(Math.cos(theta), 0.0, Math.sin(theta));
+    normals.push(Math.cos(nextTheta), 0.0, Math.sin(nextTheta));
+    normals.push(Math.cos(nextTheta), 0.0, Math.sin(nextTheta));
+    normals.push(Math.cos(theta), 0.0, Math.sin(theta));
+    texCoords.push(0.0, 1.0);
+    texCoords.push(1.0, 1.0);
+    texCoords.push(1.0, 0.0);
+    texCoords.push(0.0, 0.0);
+
+    // Slice of bottom face
+    vertices.push(radius * Math.cos(theta), -halfLength, radius * Math.sin(theta));
+    vertices.push(radius * Math.cos(nextTheta), -halfLength, radius * Math.sin(nextTheta));
+    vertices.push(0.0, -halfLength, 0.0);
+    normals.push(0.0, -1.0, 0.0);
+    normals.push(0.0, -1.0, 0.0);
+    normals.push(0.0, -1.0, 0.0);
+    texCoords.push(0.0, 0.0);
+    texCoords.push(1.0, 0.0);
+    texCoords.push(0.5, 1.0);
+
+    // TODO: Figure out proper texCoords
+  }
+
+  for (var i = 0; i < 10 * slices; i += 10) {
+    indices.push(i, i+1, i+2); // Construct slice of top face
+    indices.push(i+3, i+6, i+4); // Construct triangle 1 of side
+    indices.push(i+4, i+6, i+5); // Construct triangle 2 of side
+    indices.push(i+7, i+8, i+9); // Construct slice of bottom face
+  }
+
+  // Array of vertices for unit cube
+  var vertices = new Float32Array(vertices);
+
+  // Normals of cube
+  var normals = new Float32Array(normals);
+
+  // Texture coordinates
+  var texCoords = new Float32Array(texCoords);
+
+  // Indices of the vertices
+  var indices = new Uint8Array(indices);
+
+  //console.log(vertices.length, normals.length, texCoords.length, indices.length);
 
   // Write the vertex property to buffers (coordinates, texture coordinates and normals)
   if (!initArrayBuffer(gl, 'a_Position', vertices, 3, gl.FLOAT)) return -1;
