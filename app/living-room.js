@@ -1,6 +1,6 @@
-///////////////
-/// SHADERS ///
-///////////////
+//---------
+// SHADERS
+//---------
 
 // Vertex shader program
 var VSHADER_SOURCE =
@@ -68,7 +68,7 @@ function main() {
     return;
   }
 
-  // Set the clear color to white and enable the depth test
+  // Set clear color to white and enable depth test
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
 
@@ -80,12 +80,12 @@ function main() {
 
   var program = gl.program;
 
-  // Get the storage locations of attribute variables
+  // Get storage locations of attribute variables
   program.a_Position = gl.getAttribLocation(program, 'a_Position');
   program.a_Normal = gl.getAttribLocation(program, 'a_Normal');
   program.a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
 
-  // Get the storage locations of uniform variables
+  // Get storage locations of uniform variables
   program.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
   program.u_NormalMatrix = gl.getUniformLocation(program, 'u_NormalMatrix');
   program.u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
@@ -95,6 +95,7 @@ function main() {
   program.u_Intensity = gl.getUniformLocation(program, 'u_Intensity');
   program.u_IgnoreLighting = gl.getUniformLocation(program, 'u_IgnoreLighting');
 
+  // Check storage locations have been loaded successfully
   if (program.a_Position < 0 ||  program.a_Normal < 0 || program.a_TexCoord < 0 ||
       !program.u_MvpMatrix || !program.u_NormalMatrix || !program.u_ModelMatrix ||
       !program.u_LightColor || !program.u_LightPosition || !program.u_AmbientLight ||
@@ -114,22 +115,22 @@ function main() {
   // Set ignore lighting to 0
   gl.uniform1f(program.u_IgnoreLighting, 0);
 
-  var modelMatrix = new Matrix4();  // Model matrix
-  var mvpMatrix = new Matrix4();    // Model view projection matrix
-  var normalMatrix = new Matrix4(); // Transformation matrix for normals
+  // Initialise matrices
+  var modelMatrix = new Matrix4();
+  var mvpMatrix = new Matrix4();    
+  var normalMatrix = new Matrix4(); 
 
-  // Calculate the model matrix
+  // Calculate and pass the model matrix to u_ModelMatrix
   modelMatrix.setRotate(90, 0, 1, 0); 
-  // Pass the model matrix to u_ModelMatrix
   gl.uniformMatrix4fv(program.u_ModelMatrix, false, modelMatrix.elements);
 
-  // Pass the model view projection matrix to u_MvpMatrix
+  // Create and pass the model view projection matrix to u_MvpMatrix
   mvpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
   mvpMatrix.lookAt(30, 30, 30, 0, 0, 0, 0, 1, 0);
   mvpMatrix.multiply(modelMatrix);
   gl.uniformMatrix4fv(program.u_MvpMatrix, false, mvpMatrix.elements);
 
-  // Pass the matrix to transform the normal based on the model matrix to u_NormalMatrix
+  // Pass the normalMatrix to u_NormalMatrix
   normalMatrix.setInverseOf(modelMatrix);
   normalMatrix.transpose();
   gl.uniformMatrix4fv(program.u_NormalMatrix, false, normalMatrix.elements);
@@ -148,21 +149,21 @@ function main() {
     };
 
     // Handle each input
-    if (keyDown[39] == true) { // The right arrow key was pressed
+    if (keyDown[39] == true) { // Right arrow key was pressed
       rotationAngle = (rotationAngle - 1) % 360;
     } 
 
-    if (keyDown[37] == true) { // The left arrow key was pressed
+    if (keyDown[37] == true) { // Left arrow key was pressed
       rotationAngle = (rotationAngle + 1) % 360;
     } 
 
-    if (keyDown[38] == true) { // The up arrow key was pressed
+    if (keyDown[38] == true) { // Up arrow key was pressed
       if (g_viewY < 50) {
         g_viewY += 0.5;
       }
     }
 
-    if (keyDown[40] == true) { // The down arrow key was pressed
+    if (keyDown[40] == true) { // Down arrow key was pressed
       if (g_viewY > 0) {
         g_viewY -= 0.5; 
       }
@@ -197,8 +198,6 @@ function main() {
     }
 
     // Update perspective and lookAt with new coordinates
-    viewMatrix = new Matrix4().setIdentity();
-
     mvpMatrix.setPerspective(g_viewX, canvas.width/canvas.height, 1, 100);
     mvpMatrix.lookAt(30, g_viewY, 30, 0, 0, 0, 0, 1, 0);
     mvpMatrix.multiply(modelMatrix);
@@ -253,7 +252,6 @@ function main() {
     draw(gl, mvpMatrix, program.u_MvpMatrix, program.u_NormalMatrix, program);
     window.requestAnimationFrame(update);
   }
-
   window.requestAnimationFrame(update);
 }
 
@@ -286,7 +284,7 @@ function draw(gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
   // Assign following models as all part of table
   pushMatrix(g_modelMatrix);
 
-  // Draw table
+  // Draw table with coasters and remote control as children
   drawTable(gl, model, -0.3, 19.5, 0.0, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
 
   // Change shape to cylinder
@@ -344,7 +342,7 @@ function draw(gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
   pushMatrix(g_modelMatrix);
 
   // Draw bean bag
-  drawBeanbag(gl, model, -0.2, 11.0, -0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawBeanbag(gl, model, -0.2, 8.5, -0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Assign cabinet as child of carpet
@@ -361,35 +359,35 @@ function draw(gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix, program) {
   pushMatrix(g_modelMatrix);
 
   // Draw speaker 1
-  drawSpeaker(gl, model, 0.8, 19.5, -0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawSpeaker(gl, model, 0.8, 15.0, -0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 
   // Assign speaker 2 as child of carpet
   pushMatrix(g_modelMatrix);
 
   // Draw speaker 2
-  drawSpeaker(gl, model, 0.8, 19.5, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+  drawSpeaker(gl, model, 0.8, 15.0, 0.7, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
   g_modelMatrix = popMatrix(g_modelMatrix);
 }
 
 
-// Draw cuboid of specified dimensions
+// Draw currently buffered shape
 function drawShape(gl, model, width, height, depth, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
 
-  // Scale box dimensions
+  // Scale dimensions
   g_modelMatrix.scale(width, height, depth);
 
-  // Calculate the model view project matrix and pass it to u_MvpMatrix
+  // Calculate model view project matrix and pass it to u_MvpMatrix
   g_mvpMatrix.set(viewProjMatrix);
   g_mvpMatrix.multiply(g_modelMatrix);
   gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
 
-  // Calculate the normal transformation matrix and pass it to u_NormalMatrix
+  // Calculate normal transformation matrix and pass it to u_NormalMatrix
   g_normalMatrix.setInverseOf(g_modelMatrix);
   g_normalMatrix.transpose();
   gl.uniformMatrix4fv(u_NormalMatrix, false, g_normalMatrix.elements);
 
-  // Draw
+  // Draw the shape
   gl.drawElements(gl.TRIANGLES, model, gl.UNSIGNED_BYTE, 0);
 }
 
@@ -775,7 +773,7 @@ function initCubeVertexBuffers(gl) {
    20,21,22,  20,22,23     // back
   ]);
 
-  // Write the vertex property to buffers (coordinates, texture coordinates and normals)
+  // Write the vertex properties to buffers
   if (!initArrayBuffer(gl, 'a_Position', vertices, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_Normal', normals, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_TexCoord', texCoords, 2, gl.FLOAT)) return -1;
@@ -783,7 +781,7 @@ function initCubeVertexBuffers(gl) {
   // Unbind the buffer object
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-  // Write the indices to the buffer object
+  // Write indices to the buffer object
   var indexBuffer = gl.createBuffer();
   if (!indexBuffer) {
     console.log('Failed to create the buffer object');
@@ -805,9 +803,6 @@ function initCylinderVertexBuffers(gl) {
   var halfLength = 0.5;
   var slices = 20;
 
-  // Delta angle to allow calculation of texture vertices
-  var deltaAngle = (2.0 * Math.PI)/slices;
-
   // Array of vertices for unit cube
   var vertices = [];
 
@@ -825,7 +820,7 @@ function initCylinderVertexBuffers(gl) {
     var theta = (i / slices) * 2.0 * Math.PI;
     var nextTheta = ((i+1) / slices) * 2.0 * Math.PI;
 
-    // Generate vertices
+    // Slice of top face
     vertices.push(0.0, halfLength, 0.0);
     vertices.push(radius * Math.cos(theta), halfLength, radius * Math.sin(theta));
     vertices.push(radius * Math.cos(nextTheta), halfLength, radius * Math.sin(nextTheta));
@@ -861,7 +856,6 @@ function initCylinderVertexBuffers(gl) {
     texCoords.push(radius * Math.cos(nextTheta, 0.0), radius * Math.sin(nextTheta));
     texCoords.push(0.5, 0.5);
 
-    // TODO: Figure out proper texCoords
   }
 
   for (var i = 0; i < 10 * slices; i += 10) {
@@ -871,10 +865,10 @@ function initCylinderVertexBuffers(gl) {
     indices.push(i+7, i+8, i+9); // Construct slice of bottom face
   }
 
-  // Array of vertices for unit cube
+  // Array of vertices for unit cylinder
   var vertices = new Float32Array(vertices);
 
-  // Normals of cube
+  // Normals of cylinder
   var normals = new Float32Array(normals);
 
   // Texture coordinates
@@ -883,9 +877,7 @@ function initCylinderVertexBuffers(gl) {
   // Indices of the vertices
   var indices = new Uint8Array(indices);
 
-  //console.log(vertices.length, normals.length, texCoords.length, indices.length);
-
-  // Write the vertex property to buffers (coordinates, texture coordinates and normals)
+  // Write the vertex properties to buffers
   if (!initArrayBuffer(gl, 'a_Position', vertices, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_Normal', normals, 3, gl.FLOAT)) return -1;
   if (!initArrayBuffer(gl, 'a_TexCoord', texCoords, 2, gl.FLOAT)) return -1;
@@ -915,11 +907,11 @@ function initArrayBuffer(gl, attribute, data, num, type) {
     console.log('Failed to create the buffer object');
     return false;
   }
-  // Write date into the buffer object
+  // Write data into buffer object
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 
-  // Assign the buffer object to the attribute variable
+  // Assign buffer object to the attribute variable
   var a_attribute = gl.getAttribLocation(gl.program, attribute);
   if (a_attribute < 0) {
     console.log('Failed to get the storage location of ' + attribute);
@@ -941,7 +933,7 @@ function initTextures(gl) {
     return false;
   }
 
-  // Initialise list of images
+  // Initialise array for images
   var images = [];
 
   // Create image objects
@@ -959,7 +951,7 @@ function initTextures(gl) {
   var image12 = new Image();
   var image13 = new Image();
 
-  // Tell the browser to load images
+  // Load images
   image1.src = '../textures/carpet.jpg';
   image2.src = '../textures/wood.jpg';
   image3.src = '../textures/brass.jpg';
@@ -995,8 +987,10 @@ function initTextures(gl) {
   return true;
 }
 
+// Initialise array to hold textures
 var textures = [];
 
+// Populate texture array
 function loadTextures(gl, u_Texture, images) {
   for (var i = 0; i < images.length; i++) {
 
