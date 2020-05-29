@@ -1,5 +1,7 @@
 # WebGL-Living-Room
-A webpage demonstrating a 3D render of a living room written in WebGL 
+A 3D living room scene written in WebGL 
+
+![](webgl-living-room-demo.gif)
 
 ## Instructions
 
